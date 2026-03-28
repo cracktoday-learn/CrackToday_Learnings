@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Plus, Search, FileText, Clock, Award, Edit, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { Plus, Search, FileText, Clock, Award, Edit, Trash2, ToggleLeft, ToggleRight, X, BookOpen } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
 

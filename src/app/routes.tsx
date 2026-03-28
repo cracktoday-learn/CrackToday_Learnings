@@ -9,6 +9,7 @@ import { Profile } from "./pages/user/Profile";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
+import { AdminQuestions } from "./pages/admin/Questions";
 import { Login } from "./pages/auth/Login";
 import { Signup } from "./pages/auth/Signup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
       { index: true, Component: AdminDashboard },
       { path: "users", Component: AdminUsers },
       { path: "tests", Component: AdminTests },
+      { path: "tests/:batchId/questions", Component: AdminQuestions },
     ],
   },
 ]);
