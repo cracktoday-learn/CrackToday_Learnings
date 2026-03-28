@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { supabase } from "../../utils/supabase/client";
 
@@ -25,8 +25,12 @@ export const AdminLink = () => {
   if (!isAdmin) return null;
 
   return (
-    <Link to="/admin" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1">
-      <Settings className="h-4 w-4" /> Admin
+    <Link
+      to="/admin"
+      className="flex items-center gap-2 bg-slate-900 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+    >
+      <LayoutDashboard className="h-4 w-4" />
+      Admin Panel
     </Link>
   );
 };
