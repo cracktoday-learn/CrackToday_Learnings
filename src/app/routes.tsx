@@ -5,6 +5,7 @@ import { Home } from "./pages/user/Home";
 import { UserDashboard } from "./pages/user/Dashboard";
 import { Exams } from "./pages/user/Exams";
 import { Pricing } from "./pages/user/Pricing";
+import { Profile } from "./pages/user/Profile";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
@@ -29,6 +30,14 @@ export const router = createBrowserRouter([
       },
       { path: "exams", Component: Exams },
       { path: "pricing", Component: Pricing },
+      {
+        path: "profile",
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
       { path: "*", Component: Home },
     ],
   },
