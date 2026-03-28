@@ -1,6 +1,7 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { BookOpen, UserCircle, Settings, LogOut } from "lucide-react";
+import { BookOpen, UserCircle, LogOut } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
+import { AdminLink } from "../components/AdminLink";
 import { supabase } from "../../utils/supabase/client";
 import { toast } from "sonner";
 
