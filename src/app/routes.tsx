@@ -7,10 +7,12 @@ import { Exams } from "./pages/user/Exams";
 import { Pricing } from "./pages/user/Pricing";
 import { Profile } from "./pages/user/Profile";
 import { TakeTest } from "./pages/user/TakeTest";
+import { Checkout } from "./pages/user/Checkout";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
 import { AdminQuestions } from "./pages/admin/Questions";
+import { AdminCoupons } from "./pages/admin/Coupons";
 import { Login } from "./pages/auth/Login";
 import { Signup } from "./pages/auth/Signup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -24,30 +26,22 @@ export const router = createBrowserRouter([
       { index: true, Component: Home },
       {
         path: "dashboard",
-        element: (
-          <ProtectedRoute>
-            <UserDashboard />
-          </ProtectedRoute>
-        ),
-      },
-      { path: "exams", Component: Exams },
-      { path: "pricing", Component: Pricing },
-      {
-        path: "test/:batchId",
-        element: (
-          <ProtectedRoute>
-            <TakeTest />
-          </ProtectedRoute>
-        ),
+        element: (<ProtectedRoute><UserDashboard /></ProtectedRoute>),
       },
       {
         path: "profile",
-        element: (
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        ),
+        element: (<ProtectedRoute><Profile /></ProtectedRoute>),
       },
+      {
+        path: "test/:batchId",
+        element: (<ProtectedRoute><TakeTest /></ProtectedRoute>),
+      },
+      {
+        path: "checkout/:batchId",
+        element: (<ProtectedRoute><Checkout /></ProtectedRoute>),
+      },
+      { path: "exams", Component: Exams },
+      { path: "pricing", Component: Pricing },
       { path: "*", Component: Home },
     ],
   },
@@ -55,16 +49,13 @@ export const router = createBrowserRouter([
   { path: "/signup", Component: Signup },
   {
     path: "/admin",
-    element: (
-      <AdminRoute>
-        <AdminLayout />
-      </AdminRoute>
-    ),
+    element: (<AdminRoute><AdminLayout /></AdminRoute>),
     children: [
       { index: true, Component: AdminDashboard },
       { path: "users", Component: AdminUsers },
       { path: "tests", Component: AdminTests },
       { path: "tests/:batchId/questions", Component: AdminQuestions },
+      { path: "coupons", Component: AdminCoupons },
     ],
   },
 ]);

@@ -172,7 +172,7 @@ export function UserDashboard() {
                       <PlayCircle className="h-4 w-4" /> Start Test
                     </Link>
                   ) : (
-                    <Link to="/pricing" className="w-full bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <Link to={`/checkout/${batch.id}`} className="w-full bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
                       Buy Now
                     </Link>
                   )}
