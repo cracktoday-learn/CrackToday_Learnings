@@ -8,6 +8,7 @@ import { Pricing } from "./pages/user/Pricing";
 import { Profile } from "./pages/user/Profile";
 import { TakeTest } from "./pages/user/TakeTest";
 import { Checkout } from "./pages/user/Checkout";
+import { Leaderboard } from "./pages/user/Leaderboard";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";

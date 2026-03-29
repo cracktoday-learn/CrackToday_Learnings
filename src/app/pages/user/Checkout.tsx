@@ -14,6 +14,12 @@ interface Batch {
   exam_type: string;
 }
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export function Checkout() {
   const { batchId } = useParams();
   const { user } = useAuth();
@@ -29,7 +35,15 @@ export function Checkout() {
   useEffect(() => {
     fetchBatch();
     checkAlreadyPurchased();
+    loadRazorpay();
   }, [batchId]);
+
+  const loadRazorpay = () => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  };
 
   const fetchBatch = async () => {
     setLoading(true);
@@ -95,40 +109,81 @@ export function Checkout() {
     }
   };
 
-  const handlePurchase = async () => {
+  const savePurchase = async (discountedPrice: number) => {
+    const { error } = await supabase.from("purchases").insert({
+      user_id: user?.id,
+      batch_id: batchId,
+      amount_paid: discountedPrice,
+    });
+
+    if (error) throw error;
+
+    if (coupon) {
+      await supabase
+        .from("coupons")
+        .update({ used_count: coupon.used_count + 1 })
+        .eq("id", coupon.id);
+    }
+  };
+
+  const handlePayment = async () => {
     if (!batch) return;
     setPurchasing(true);
-    try {
-      const discountedPrice = coupon
-        ? Math.round(batch.price - (batch.price * coupon.discount_percent) / 100)
-        : batch.price;
 
-      const { error } = await supabase.from("purchases").insert({
-        user_id: user?.id,
-        batch_id: batchId,
-        amount_paid: discountedPrice,
-      });
+    const discountedPrice = coupon
+      ? Math.round(batch.price - (batch.price * coupon.discount_percent) / 100)
+      : batch.price;
 
-      if (error) throw error;
-
-      // Update coupon used count
-      if (coupon) {
-        await supabase
-          .from("coupons")
-          .update({ used_count: coupon.used_count + 1 })
-          .eq("id", coupon.id);
-      }
-
-      toast.success("Purchase successful! 🎉");
-      navigate("/dashboard");
-    } catch (err: any) {
-      if (err?.code === "23505") {
-        toast.error("You have already purchased this batch!");
+    // If price is 0 after discount, purchase directly
+    if (discountedPrice === 0) {
+      try {
+        await savePurchase(0);
+        toast.success("Enrolled for free! 🎉");
         navigate("/dashboard");
-      } else {
-        toast.error("Purchase failed. Please try again.");
+      } catch (err) {
+        toast.error("Purchase failed");
+      } finally {
+        setPurchasing(false);
       }
-    } finally {
+      return;
+    }
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: discountedPrice * 100, // Razorpay uses paise
+      currency: "INR",
+      name: "CrackToday",
+      description: batch.name,
+      image: "https://cracktoday.vercel.app/favicon.ico",
+      handler: async function (response: any) {
+        try {
+          await savePurchase(discountedPrice);
+          toast.success("Payment successful! 🎉");
+          navigate("/dashboard");
+        } catch (err) {
+          toast.error("Payment done but enrollment failed. Contact support.");
+        }
+      },
+      prefill: {
+        email: user?.email,
+        name: user?.user_metadata?.name || user?.email?.split("@")[0],
+      },
+      theme: {
+        color: "#4F46E5",
+      },
+      modal: {
+        ondismiss: function () {
+          setPurchasing(false);
+          toast.error("Payment cancelled");
+        },
+      },
+    };
+
+    try {
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      toast.error("Payment gateway failed to load. Please try again.");
       setPurchasing(false);
     }
   };
@@ -181,10 +236,7 @@ export function Checkout() {
           <CheckCircle className="h-10 w-10 text-emerald-600 mx-auto mb-3" />
           <h3 className="font-bold text-emerald-900 mb-1">Already Purchased!</h3>
           <p className="text-sm text-emerald-700 mb-4">You already have access to this batch.</p>
-          <Link
-            to={`/test/${batch.id}`}
-            className="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors"
-          >
+          <Link to={`/test/${batch.id}`} className="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors">
             Start Test
           </Link>
         </div>
@@ -231,7 +283,7 @@ export function Checkout() {
                 <div className="flex justify-between text-sm">
                   <span className="text-emerald-600">Discount ({coupon.discount_percent}%)</span>
                   <span className="font-medium text-emerald-600">
-                    - ₹{Math.round(batch.price * coupon.discount_percent / 100)}
+                    - ✅{Math.round(batch.price * coupon.discount_percent / 100)}
                   </span>
                 </div>
               )}
@@ -242,16 +294,16 @@ export function Checkout() {
             </div>
           </div>
 
-          {/* Purchase Button */}
+          {/* Pay Button */}
           <button
-            onClick={handlePurchase}
+            onClick={handlePayment}
             disabled={purchasing}
             className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-lg shadow-indigo-200"
           >
-            {purchasing ? "Processing..." : `Pay ₹${discountedPrice} & Enroll Now`}
+            {purchasing ? "Opening Payment..." : discountedPrice === 0 ? "Enroll for Free!" : `Pay ₹${discountedPrice} with Razorpay`}
           </button>
           <p className="text-xs text-slate-400 text-center mt-3">
-            By purchasing you agree to our terms of service.
+            Secured by Razorpay 🔒
           </p>
         </>
       )}
