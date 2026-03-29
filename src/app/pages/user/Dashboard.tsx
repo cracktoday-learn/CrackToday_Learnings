@@ -62,9 +62,13 @@ export function UserDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      {/* Header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user?.user_metadata?.name || user?.email?.split("@")[0]}! 👋</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Welcome back, {user?.user_metadata?.name || user?.email?.split("@")[0]}! 👋
+          </h1>
           <p className="text-slate-500">Here's your preparation overview.</p>
         </div>
         <div className="flex items-center gap-3">
@@ -77,6 +81,7 @@ export function UserDashboard() {
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
@@ -105,8 +110,12 @@ export function UserDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
+
+        {/* Purchased Batches */}
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><ShoppingBag className="h-5 w-5 text-indigo-600" />My Purchased Tests</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5 text-indigo-600" /> My Purchased Tests
+          </h2>
           {purchases.length === 0 ? (
             <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
               <ShoppingBag className="h-10 w-10 text-slate-300 mx-auto mb-3" />
@@ -116,7 +125,7 @@ export function UserDashboard() {
           ) : (
             <div className="space-y-4">
               {purchases.map((purchase) => (
-                <div key={purchase.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div key={purchase.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:border-indigo-200 transition-colors">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="font-semibold text-slate-900">{purchase.batches?.name}</h3>
@@ -125,17 +134,23 @@ export function UserDashboard() {
                     <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Active</span>
                   </div>
                   <p className="text-sm text-slate-600 mb-4">{purchase.batches?.description}</p>
-                  <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+                  <Link
+                    to={`/test/${purchase.batch_id}`}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
                     <PlayCircle className="h-4 w-4" /> Start Test
-                  </button>
+                  </Link>
                 </div>
               ))}
             </div>
           )}
         </section>
 
+        {/* Available Batches */}
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><FileText className="h-5 w-5 text-indigo-600" />Available Test Batches</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-indigo-600" /> Available Test Batches
+          </h2>
           <div className="space-y-4">
             {availableBatches.map((batch) => {
               const isPurchased = purchasedBatchIds.includes(batch.id);
@@ -150,9 +165,12 @@ export function UserDashboard() {
                   </div>
                   <p className="text-sm text-slate-600 mb-4">{batch.description}</p>
                   {isPurchased ? (
-                    <button disabled className="w-full bg-emerald-50 text-emerald-700 text-sm font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed">
-                      <CheckCircle className="h-4 w-4" /> Already Purchased
-                    </button>
+                    <Link
+                      to={`/test/${batch.id}`}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <PlayCircle className="h-4 w-4" /> Start Test
+                    </Link>
                   ) : (
                     <Link to="/pricing" className="w-full bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
                       Buy Now
@@ -163,6 +181,7 @@ export function UserDashboard() {
             })}
           </div>
         </section>
+
       </div>
     </div>
   );
