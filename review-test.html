@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Review Test | CrackToday</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #f5f6fa; --surface: #fff; --border: #e4e6ef;
+    --accent: #4f6ef7; --success: #16a34a; --danger: #dc2626;
+    --success-bg: #f0fdf4; --danger-bg: #fef2f2;
+    --success-border: #bbf7d0; --danger-border: #fecaca;
+    --text: #1e2030; --text-muted: #64748b; --text-dim: #94a3b8;
+    --radius: 10px; --font: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); }
+
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .back-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); font-family: var(--font); font-size: 13px;
+    cursor: pointer; color: var(--text-muted); transition: all .15s; }
+  .back-btn:hover { background: var(--bg); }
+  .topbar-title { font-size: 15px; font-weight: 600; }
+
+  .score-banner { background: linear-gradient(135deg, #4f6ef7, #7b5bf0); color: #fff; padding: 28px 24px; }
+  .score-banner-inner { max-width: 780px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .score-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .score-sub { font-size: 13px; opacity: .8; }
+  .score-pills { display: flex; gap: 12px; flex-wrap: wrap; }
+  .score-pill { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; backdrop-filter: blur(4px); }
+  .pill-score  { background: rgba(255,255,255,.2); }
+  .pill-correct { background: rgba(34,197,94,.25); }
+  .pill-wrong  { background: rgba(239,68,68,.25); }
+  .pill-skip   { background: rgba(245,158,11,.25); }
+
+  .container { max-width: 780px; margin: 0 auto; padding: 24px; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: var(--surface); font-family: var(--font); font-size: 13px; cursor: pointer;
+    color: var(--text-muted); transition: all .15s; }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-btn.correct.active { background: var(--success); border-color: var(--success); }
+  .filter-btn.wrong.active   { background: var(--danger); border-color: var(--danger); }
+
+  /* Review cards */
+  .review-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+  .review-card.correct-card { border-color: var(--success-border); }
+  .review-card.wrong-card   { border-color: var(--danger-border); }
+  .review-card.skip-card    { border-color: #fcd34d; }
+
+  .rc-header { padding: 14px 18px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border); }
+  .rc-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-correct { background: var(--success-bg); color: var(--success); }
+  .badge-wrong   { background: var(--danger-bg); color: var(--danger); }
+  .badge-skip    { background: #fffbeb; color: #d97706; }
+  .rc-num { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+  .rc-body { padding: 18px; }
+  .rc-question { font-size: 15px; font-weight: 500; line-height: 1.6; margin-bottom: 16px; }
+  .rc-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rc-option { padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; display: flex; gap: 8px; }
+  .rc-option.correct-opt { background: var(--success-bg); border-color: var(--success-border); }
+  .rc-option.wrong-opt   { background: var(--danger-bg); border-color: var(--danger-border); }
+  .rc-option-key { font-weight: 600; flex-shrink: 0; }
+  .correct-opt .rc-option-key { color: var(--success); }
+  .wrong-opt   .rc-option-key { color: var(--danger); }
+  .rc-explanation { margin-top: 14px; padding: 12px 14px; background: #fffbeb; border-radius: 8px;
+    border-left: 3px solid #fcd34d; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .rc-explanation strong { color: #d97706; }
+
+  .loading { text-align: center; padding: 60px; color: var(--text-muted); }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="back-btn" onclick="history.back()">← Back</button>
+    <div class="topbar-title" id="pageTitle">Review Answers</div>
+  </div>
+</div>
+
+<div id="scoreBanner"></div>
+
+<div class="container">
+  <div class="filter-bar" id="filterBar" style="display:none">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn correct" onclick="setFilter('correct',this)">✓ Correct</button>
+    <button class="filter-btn wrong" onclick="setFilter('wrong',this)">✗ Wrong</button>
+    <button class="filter-btn" onclick="setFilter('skipped',this)">— Skipped</button>
+  </div>
+  <div id="mainContent">
+    <div class="loading"><div class="spinner"></div>Loading…</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const params = new URLSearchParams(location.search);
+const PAPER_ID = params.get('paper');
+
+let user = null;
+let questions = [];
+let answers = {};
+let activeFilter = 'all';
+
+async function init() {
+  const { data: { user: u } } = await sb.auth.getUser();
+  if (!u) { location.href = '/login.html'; return; }
+  user = u;
+  await loadData();
+}
+
+async function loadData() {
+  const { data: paper } = await sb.from('question_papers').select('*').eq('id', PAPER_ID).single();
+  if (!paper) return;
+  document.getElementById('pageTitle').textContent = `Review: ${paper.title}`;
+
+  const { data: qs } = await sb.from('questions').select('*').eq('paper_id', PAPER_ID).order('question_no');
+  questions = qs || [];
+
+  const { data: ans } = await sb.from('learner_answers')
+    .select('*').eq('learner_id', user.id).eq('paper_id', PAPER_ID);
+  (ans || []).forEach(a => { answers[a.question_id] = a.selected_answer; });
+
+  const { data: prog } = await sb.from('learner_progress')
+    .select('*').eq('learner_id', user.id).eq('paper_id', PAPER_ID).single();
+
+  renderBanner(paper, prog);
+  document.getElementById('filterBar').style.display = 'flex';
+  renderCards();
+}
+
+function renderBanner(paper, prog) {
+  const correct = questions.filter(q => answers[q.id] === q.correct_answer).length;
+  const wrong   = questions.filter(q => answers[q.id] && answers[q.id] !== q.correct_answer).length;
+  const skipped = questions.filter(q => !answers[q.id]).length;
+  const pct = Math.round(correct / questions.length * 100);
+
+  document.getElementById('scoreBanner').innerHTML = `
+    <div class="score-banner">
+      <div class="score-banner-inner">
+        <div>
+          <div class="score-title">${paper.title}</div>
+          <div class="score-sub">Completed · ${questions.length} questions</div>
+        </div>
+        <div class="score-pills">
+          <div class="score-pill pill-score">${pct}% Score</div>
+          <div class="score-pill pill-correct">✓ ${correct} Correct</div>
+          <div class="score-pill pill-wrong">✗ ${wrong} Wrong</div>
+          <div class="score-pill pill-skip">— ${skipped} Skipped</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function setFilter(type, btn) {
+  activeFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards();
+}
+
+function renderCards() {
+  let filtered = questions;
+  if (activeFilter === 'correct') filtered = questions.filter(q => answers[q.id] === q.correct_answer);
+  else if (activeFilter === 'wrong')   filtered = questions.filter(q => answers[q.id] && answers[q.id] !== q.correct_answer);
+  else if (activeFilter === 'skipped') filtered = questions.filter(q => !answers[q.id]);
+
+  if (!filtered.length) {
+    document.getElementById('mainContent').innerHTML = `<div class="loading">No questions in this category</div>`;
+    return;
+  }
+
+  const opts = ['A','B','C','D'];
+  document.getElementById('mainContent').innerHTML = filtered.map((q, i) => {
+    const sel = answers[q.id];
+    const isCorrect = sel === q.correct_answer;
+    const isSkipped = !sel;
+    let cardClass = isSkipped ? 'skip-card' : isCorrect ? 'correct-card' : 'wrong-card';
+    let badge = isSkipped
+      ? '<span class="rc-badge badge-skip">Skipped</span>'
+      : isCorrect
+        ? '<span class="rc-badge badge-correct">✓ Correct</span>'
+        : '<span class="rc-badge badge-wrong">✗ Wrong</span>';
+
+    const optTexts = [q.option_a, q.option_b, q.option_c, q.option_d];
+    const optionsHTML = opts.map((key, idx) => {
+      let cls = 'rc-option';
+      if (key === q.correct_answer) cls += ' correct-opt';
+      else if (key === sel) cls += ' wrong-opt';
+      const mark = key === q.correct_answer ? '✓ ' : (key === sel ? '✗ ' : '');
+      return `<div class="${cls}"><span class="rc-option-key">${mark}${key}.</span><span>${optTexts[idx]}</span></div>`;
+    }).join('');
+
+    const explanationHTML = q.explanation
+      ? `<div class="rc-explanation"><strong>Explanation:</strong> ${q.explanation}</div>` : '';
+
+    return `
+      <div class="review-card ${cardClass}">
+        <div class="rc-header">${badge}<span class="rc-num">Q${q.question_no}</span></div>
+        <div class="rc-body">
+          <div class="rc-question">${q.question_text}</div>
+          <div class="rc-options">${optionsHTML}</div>
+          ${explanationHTML}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>

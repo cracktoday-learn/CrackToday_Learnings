@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Take Test | CrackToday</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap');
+
+  :root {
+    --bg: #f5f6fa;
+    --surface: #fff;
+    --border: #e4e6ef;
+    --accent: #4f6ef7;
+    --accent-bg: #eef1ff;
+    --success: #16a34a;
+    --success-bg: #f0fdf4;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --warning: #d97706;
+    --text: #1e2030;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --radius: 10px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); }
+
+  /* ── Exam Bar ── */
+  .exam-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .exam-title { font-size: 14px; font-weight: 600; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .exam-center { display: flex; align-items: center; gap: 16px; }
+  .timer {
+    font-family: var(--mono); font-size: 20px; font-weight: 500;
+    padding: 6px 14px; border-radius: 8px; background: var(--accent-bg); color: var(--accent);
+    min-width: 80px; text-align: center;
+  }
+  .timer.warning { background: #fff3cd; color: var(--warning); }
+  .timer.danger  { background: var(--danger-bg); color: var(--danger); animation: pulse .8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+  .progress-label { font-size: 12px; color: var(--text-muted); }
+  .submit-btn {
+    padding: 8px 18px; background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; font-family: var(--font); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+  }
+  .submit-btn:hover { background: #3f5ce0; }
+  .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Layout ── */
+  .layout { display: grid; grid-template-columns: 1fr 260px; gap: 20px; padding: 20px; max-width: 1100px; margin: 0 auto; }
+
+  /* ── Question Panel ── */
+  .qpanel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+  .q-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 20px; }
+  .q-num { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+  .q-text { font-size: 16px; font-weight: 500; line-height: 1.6; color: var(--text); }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .option {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; border-radius: 10px; border: 1.5px solid var(--border);
+    cursor: pointer; transition: all .15s; user-select: none;
+  }
+  .option:hover { border-color: var(--accent); background: var(--accent-bg); }
+  .option.selected { border-color: var(--accent); background: var(--accent-bg); }
+  .option.selected .opt-key { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .opt-key {
+    width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--text-muted); flex-shrink: 0;
+    transition: all .15s;
+  }
+  .opt-text { font-size: 15px; line-height: 1.5; }
+
+  /* Navigation */
+  .q-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .nav-btn {
+    padding: 9px 20px; border-radius: 8px; font-family: var(--font); font-size: 14px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: all .15s;
+  }
+  .nav-btn:hover { background: var(--bg); }
+  .nav-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .nav-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .nav-btn.primary:hover { background: #3f5ce0; }
+  .skip-btn { background: none; border: none; font-size: 13px; color: var(--text-muted); cursor: pointer; font-family: var(--font); padding: 6px; }
+  .skip-btn:hover { color: var(--text); }
+
+  /* ── Question Map (right sidebar) ── */
+  .qmap { position: sticky; top: 73px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; max-height: calc(100vh - 93px); overflow-y: auto; }
+  .qmap-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--text-dim); margin-bottom: 14px; }
+  .qmap-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .qmap-dot {
+    width: 100%; aspect-ratio: 1; border-radius: 6px; border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500;
+    cursor: pointer; transition: all .15s; color: var(--text-muted);
+  }
+  .qmap-dot:hover { border-color: var(--accent); }
+  .qmap-dot.answered { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+  .qmap-dot.current  { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .qmap-dot.skipped  { background: #fff3cd; border-color: #fcd34d; color: var(--warning); }
+
+  .qmap-legend { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* ── Result Modal ── */
+  .modal-wrap {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal {
+    background: var(--surface); border-radius: 16px; padding: 36px; max-width: 480px; width: 100%;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.15);
+  }
+  .modal-icon { font-size: 52px; margin-bottom: 16px; }
+  .modal-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .modal-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+  .score-ring { margin: 0 auto 24px; width: 120px; height: 120px; position: relative; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-ring-pct { font-size: 26px; font-weight: 700; color: var(--text); }
+  .score-ring-label { font-size: 11px; color: var(--text-muted); }
+  .modal-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .modal-stat { background: var(--bg); border-radius: 8px; padding: 12px; }
+  .modal-stat-val { font-size: 18px; font-weight: 600; }
+  .modal-stat-key { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .val-correct { color: var(--success); }
+  .val-wrong   { color: var(--danger); }
+  .val-skip    { color: var(--warning); }
+  .modal-actions { display: flex; flex-direction: column; gap: 10px; }
+  .modal-btn {
+    padding: 12px 20px; border-radius: 10px; font-family: var(--font); font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; transition: all .15s;
+  }
+  .modal-btn.primary { background: var(--accent); color: #fff; }
+  .modal-btn.primary:hover { background: #3f5ce0; }
+  .modal-btn.secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .modal-btn.secondary:hover { background: var(--border); }
+  .next-badge { background: #ecfdf5; color: var(--success); border: 1px solid #bbf7d0;
+    border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; display: inline-block; margin-bottom: 16px; }
+
+  .loading { text-align: center; padding: 80px; color: var(--text-muted); }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- Exam Bar -->
+<div class="exam-bar">
+  <div class="exam-title" id="examTitle">Loading…</div>
+  <div class="exam-center">
+    <div id="timerEl" class="timer">--:--</div>
+    <span class="progress-label" id="progressLabel">0 / 0 answered</span>
+  </div>
+  <button class="submit-btn" id="submitBtn" onclick="confirmSubmit()" disabled>Submit Test</button>
+</div>
+
+<div class="layout">
+  <div id="mainContent">
+    <div class="loading"><div class="spinner"></div>Loading questions…</div>
+  </div>
+  <div id="sidebarContent" style="display:none">
+    <div class="qmap">
+      <div class="qmap-title">Question Map</div>
+      <div class="qmap-grid" id="qmapGrid"></div>
+      <div class="qmap-legend">
+        <div class="legend-row"><div class="legend-dot" style="background:var(--accent)"></div>Current</div>
+        <div class="legend-row"><div class="legend-dot" style="background:var(--accent-bg);border:1.5px solid var(--accent)"></div>Answered</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#fff3cd;border:1.5px solid #fcd34d"></div>Skipped</div>
+        <div class="legend-row"><div class="legend-dot" style="border:1.5px solid var(--border)"></div>Not visited</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="resultModal" style="display:none"></div>
+
+<script>
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const params = new URLSearchParams(location.search);
+const PAPER_ID = params.get('paper');
+const BATCH_ID = params.get('batch');
+
+let user = null;
+let paperData = null;
+let questions = [];
+let answers = {};   // { questionId: 'A'|'B'|'C'|'D' }
+let skipped = {};   // { questionId: true }
+let currentIndex = 0;
+let timerInterval = null;
+let secondsLeft = 0;
+let submitted = false;
+
+async function init() {
+  const { data: { user: u } } = await sb.auth.getUser();
+  if (!u) { location.href = '/login.html'; return; }
+  user = u;
+
+  if (!PAPER_ID) { alert('No paper specified'); return; }
+  await loadPaper();
+}
+
+async function loadPaper() {
+  const { data: paper } = await sb.from('question_papers').select('*').eq('id', PAPER_ID).single();
+  if (!paper) { document.getElementById('mainContent').innerHTML = '<div class="loading">Paper not found</div>'; return; }
+  paperData = paper;
+  document.getElementById('examTitle').textContent = paper.title;
+
+  const { data: qs } = await sb.from('questions').select('*').eq('paper_id', PAPER_ID).order('question_no');
+  questions = qs || [];
+
+  // Load saved answers (resume support)
+  const { data: saved } = await sb.from('learner_answers')
+    .select('*').eq('learner_id', user.id).eq('paper_id', PAPER_ID);
+  (saved || []).forEach(a => { answers[a.question_id] = a.selected_answer; });
+
+  // Update or create progress as in_progress
+  await sb.from('learner_progress').upsert({
+    learner_id: user.id, paper_id: PAPER_ID, batch_id: BATCH_ID,
+    status: 'in_progress', started_at: new Date().toISOString()
+  }, { onConflict: 'learner_id,paper_id' });
+
+  // Start timer
+  secondsLeft = paper.duration_minutes * 60;
+  startTimer();
+
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('sidebarContent').style.display = 'block';
+  renderQuestion();
+  renderMap();
+}
+
+// ── TIMER ──
+function startTimer() {
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    updateTimerDisplay();
+    if (secondsLeft <= 0) { clearInterval(timerInterval); autoSubmit(); }
+  }, 1000);
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerEl');
+  const m = Math.floor(secondsLeft / 60).toString().padStart(2,'0');
+  const s = (secondsLeft % 60).toString().padStart(2,'0');
+  el.textContent = `${m}:${s}`;
+  el.className = 'timer' + (secondsLeft <= 60 ? ' danger' : secondsLeft <= 300 ? ' warning' : '');
+}
+
+// ── RENDER QUESTION ──
+function renderQuestion() {
+  if (!questions.length) return;
+  const q = questions[currentIndex];
+  const selected = answers[q.id] || null;
+  const options = [
+    { key: 'A', text: q.option_a }, { key: 'B', text: q.option_b },
+    { key: 'C', text: q.option_c }, { key: 'D', text: q.option_d }
+  ];
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="qpanel">
+      <div class="q-header">
+        <span class="q-num">Question ${currentIndex + 1} of ${questions.length}</span>
+      </div>
+      <div class="q-text">${q.question_text}</div>
+      <div class="options">
+        ${options.map(o => `
+          <div class="option ${selected === o.key ? 'selected' : ''}" onclick="selectAnswer('${q.id}','${o.key}')">
+            <div class="opt-key">${o.key}</div>
+            <div class="opt-text">${o.text}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="q-nav">
+        <button class="nav-btn" onclick="goPrev()" ${currentIndex === 0 ? 'disabled' : ''}>← Previous</button>
+        <button class="skip-btn" onclick="skipQuestion('${q.id}')">Skip →</button>
+        <button class="nav-btn ${currentIndex === questions.length - 1 ? 'primary' : ''}"
+          onclick="${currentIndex === questions.length - 1 ? 'confirmSubmit()' : 'goNext()'}">
+          ${currentIndex === questions.length - 1 ? 'Submit Test' : 'Next →'}
+        </button>
+      </div>
+    </div>
+  `;
+
+  updateProgressLabel();
+  renderMap();
+}
+
+function selectAnswer(qId, key) {
+  answers[qId] = key;
+  delete skipped[qId];
+  saveAnswerDB(qId, key);
+  renderQuestion();
+}
+
+function skipQuestion(qId) {
+  skipped[qId] = true;
+  goNext();
+}
+
+function goPrev() { if (currentIndex > 0) { currentIndex--; renderQuestion(); } }
+function goNext()  { if (currentIndex < questions.length - 1) { currentIndex++; renderQuestion(); } }
+
+async function saveAnswerDB(qId, selected) {
+  const q = questions.find(x => x.id === qId);
+  if (!q) return;
+  await sb.from('learner_answers').upsert({
+    learner_id: user.id, paper_id: PAPER_ID, question_id: qId,
+    selected_answer: selected, is_correct: selected === q.correct_answer,
+    answered_at: new Date().toISOString()
+  }, { onConflict: 'learner_id,question_id' });
+}
+
+function updateProgressLabel() {
+  const answered = Object.keys(answers).length;
+  document.getElementById('progressLabel').textContent = `${answered} / ${questions.length} answered`;
+}
+
+// ── MAP ──
+function renderMap() {
+  const el = document.getElementById('qmapGrid');
+  el.innerHTML = questions.map((q, i) => {
+    let cls = 'qmap-dot';
+    if (i === currentIndex) cls += ' current';
+    else if (answers[q.id]) cls += ' answered';
+    else if (skipped[q.id]) cls += ' skipped';
+    return `<div class="${cls}" onclick="jumpTo(${i})">${i+1}</div>`;
+  }).join('');
+}
+
+function jumpTo(i) { currentIndex = i; renderQuestion(); }
+
+// ── SUBMIT ──
+function confirmSubmit() {
+  const unanswered = questions.length - Object.keys(answers).length;
+  if (unanswered > 0) {
+    if (!confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) return;
+  }
+  doSubmit();
+}
+
+function autoSubmit() { if (!submitted) doSubmit(); }
+
+async function doSubmit() {
+  if (submitted) return;
+  submitted = true;
+  clearInterval(timerInterval);
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').textContent = 'Submitting…';
+
+  // Calculate score
+  let correct = 0, wrong = 0;
+  questions.forEach(q => {
+    if (answers[q.id]) {
+      if (answers[q.id] === q.correct_answer) correct++;
+      else wrong++;
+    }
+  });
+  const skippedCount = questions.length - correct - wrong;
+
+  // Update progress to completed
+  await sb.from('learner_progress').upsert({
+    learner_id: user.id, paper_id: PAPER_ID, batch_id: BATCH_ID,
+    status: 'completed', completed_at: new Date().toISOString(),
+    score: correct, total_questions: questions.length
+  }, { onConflict: 'learner_id,paper_id' });
+
+  // Unlock next paper
+  await sb.rpc('unlock_next_paper', { p_learner_id: user.id, p_paper_id: PAPER_ID });
+
+  // Check if there's a next paper
+  const { data: nextPaper } = await sb.from('question_papers')
+    .select('*')
+    .eq('batch_id', BATCH_ID)
+    .gt('paper_order', paperData.paper_order)
+    .order('paper_order', { ascending: true })
+    .limit(1)
+    .single();
+
+  showResultModal({ correct, wrong, skipped: skippedCount, total: questions.length, nextPaper });
+}
+
+function showResultModal({ correct, wrong, skipped, total, nextPaper }) {
+  const pct = Math.round(correct / total * 100);
+  const passed = pct >= 40;
+  const radius = 52, circ = 2 * Math.PI * radius;
+  const dash = (pct / 100) * circ;
+
+  document.getElementById('resultModal').style.display = 'block';
+  document.getElementById('resultModal').innerHTML = `
+    <div class="modal-wrap">
+      <div class="modal">
+        <div class="modal-icon">${passed ? '🎉' : '📚'}</div>
+        <div class="modal-title">${passed ? 'Well Done!' : 'Keep Practising!'}</div>
+        <div class="modal-sub">${paperData.title}</div>
+
+        <div class="score-ring">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="${radius}" fill="none" stroke="#e4e6ef" stroke-width="10"/>
+            <circle cx="60" cy="60" r="${radius}" fill="none"
+              stroke="${passed ? '#16a34a' : '#4f6ef7'}" stroke-width="10"
+              stroke-dasharray="${dash} ${circ}" stroke-linecap="round"/>
+          </svg>
+          <div class="score-ring-text">
+            <div class="score-ring-pct">${pct}%</div>
+            <div class="score-ring-label">Score</div>
+          </div>
+        </div>
+
+        <div class="modal-stats">
+          <div class="modal-stat"><div class="modal-stat-val val-correct">${correct}</div><div class="modal-stat-key">Correct</div></div>
+          <div class="modal-stat"><div class="modal-stat-val val-wrong">${wrong}</div><div class="modal-stat-key">Wrong</div></div>
+          <div class="modal-stat"><div class="modal-stat-val val-skip">${skipped}</div><div class="modal-stat-key">Skipped</div></div>
+        </div>
+
+        ${nextPaper ? `<div class="next-badge">✓ Next paper unlocked: ${nextPaper.title}</div>` : '<div class="next-badge" style="background:#f8fafc;color:#94a3b8;border-color:#e4e6ef">🎓 All papers completed!</div>'}
+
+        <div class="modal-actions">
+          ${nextPaper ? `<button class="modal-btn primary" onclick="location.href='/batch-learner.html?batch=${BATCH_ID}'">Go to Next Paper →</button>` : ''}
+          <button class="modal-btn secondary" onclick="location.href='/review-test.html?paper=${PAPER_ID}'">Review Answers</button>
+          <button class="modal-btn secondary" onclick="location.href='/batch-learner.html?batch=${BATCH_ID}'">Back to Batch</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
