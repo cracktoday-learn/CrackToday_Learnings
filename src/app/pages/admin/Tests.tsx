@@ -96,8 +96,18 @@ export function AdminTests() {
     }
     setSaving(true);
     try {
-      const batchTests = tests.filter(t => t.batch_id === selectedBatch.id);
-      const nextTestNumber = batchTests.length + 1;
+      // Get the actual max test_number from database
+      const { data: maxTestData } = await supabase
+        .from("tests")
+        .select("test_number")
+        .eq("batch_id", selectedBatch.id)
+        .order("test_number", { ascending: false })
+        .limit(1);
+      
+      const nextTestNumber = maxTestData && maxTestData.length > 0 
+        ? maxTestData[0].test_number + 1 
+        : 1;
+      
       const newTestId = crypto.randomUUID();
 
       const { data, error } = await supabase.from("tests").insert({
@@ -113,6 +123,8 @@ export function AdminTests() {
         console.error("Error creating test:", error);
         if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
           toast.error("Tests table not found. Please run the database migration first.");
+        } else if (error.message.includes('duplicate') || error.code === '23505') {
+          toast.error("Test number already exists. Please refresh and try again.");
         } else {
           toast.error("Failed to create test: " + error.message);
         }
