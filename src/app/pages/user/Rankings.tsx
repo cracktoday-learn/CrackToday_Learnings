@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Trophy, Medal, Award, TrendingUp, Users, Clock, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../../utils/supabase/client";
+import { useAuth } from "../../components/AuthProvider";
 
 // DUMMY DATA - Replace with real data from Supabase when you have users
 const DUMMY_RANKINGS = [
@@ -30,10 +31,34 @@ interface RankingUser {
 }
 
 export function Rankings() {
+  const { user } = useAuth();
   const [rankings, setRankings] = useState<RankingUser[]>(DUMMY_RANKINGS);
   const [useRealData, setUseRealData] = useState(false);
   const [loading, setLoading] = useState(false);
   const [timeFilter, setTimeFilter] = useState("all");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkAdmin();
+  }, [user]);
+
+  const checkAdmin = async () => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      setIsAdmin(!!data && !error);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
 
   // TODO: Uncomment this useEffect when you want to switch to real data
   /*
@@ -183,13 +208,15 @@ export function Rankings() {
             ))}
           </div>
           
-          {/* Toggle for real vs dummy data - Hidden in production */}
-          <button
-            onClick={() => setUseRealData(!useRealData)}
-            className="text-sm text-slate-500 hover:text-indigo-600 underline"
-          >
-            {useRealData ? "Using Real Data" : "Using Dummy Data (Click to switch)"}
-          </button>
+          {/* Toggle for real vs dummy data - Only visible to admins */}
+          {isAdmin && (
+            <button
+              onClick={() => setUseRealData(!useRealData)}
+              className="text-sm text-slate-500 hover:text-indigo-600 underline"
+            >
+              {useRealData ? "Using Real Data" : "Using Dummy Data (Click to switch)"}
+            </button>
+          )}
         </div>
 
         {/* Rankings Table */}
