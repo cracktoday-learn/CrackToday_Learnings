@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserCircle, Mail, Calendar, ShoppingBag, Lock, Edit2, Save, X, LogOut, ArrowLeft } from "lucide-react";
+import { UserCircle, Mail, Calendar, ShoppingBag, Lock, Edit2, Save, X, LogOut, ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -16,9 +16,13 @@ export function Profile() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ newPassword: "", confirmPassword: "" });
   const [savingPassword, setSavingPassword] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchPurchases();
+    fetchProfile();
   }, []);
 
   const fetchPurchases = async () => {
@@ -34,6 +38,139 @@ export function Profile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchProfile = async () => {
+    if (!user?.id) return;
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    }
+  };
+
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          
+          // Max dimensions for low MP (0.5MP = ~500KB)
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG with 0.8 quality for high quality but small size
+          canvas.toBlob(
+            (blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error("Compression failed"));
+            },
+            "image/jpeg",
+            0.8
+          );
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user?.id) return;
+    
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    
+    // Validate file size (max 5MB before compression)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image too large. Max 5MB before compression");
+      return;
+    }
+    
+    setUploading(true);
+    try {
+      // Compress image
+      toast.info("Compressing image...");
+      const compressedBlob = await compressImage(file);
+      
+      // Create file from blob
+      const compressedFile = new File([compressedBlob], `${user.id}.jpg`, {
+        type: "image/jpeg",
+      });
+      
+      // Upload to Supabase Storage
+      const filePath = `avatars/${user.id}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("profiles")
+        .upload(filePath, compressedFile, {
+          upsert: true,
+          contentType: "image/jpeg",
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("profiles")
+        .getPublicUrl(filePath);
+      
+      // Update profiles table
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        });
+      
+      if (updateError) throw updateError;
+      
+      setAvatarUrl(publicUrl);
+      toast.success("Profile picture updated!");
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error(err.message || "Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const handleSaveName = async () => {
@@ -104,8 +241,12 @@ export function Profile() {
       {/* Profile Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-2xl border-2 border-indigo-200">
-            {(user?.user_metadata?.name || user?.email)?.charAt(0).toUpperCase()}
+          <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-2xl border-2 border-indigo-200 relative">
+            {avatarUrl ? <img src={avatarUrl} className="w-full h-full rounded-full object-cover" /> : (user?.user_metadata?.name || user?.email)?.charAt(0).toUpperCase()}
+            <button onClick={triggerFileInput} disabled={uploading} className="absolute -bottom-1 -right-1 w-6 h-6 bg-indigo-600 text-white rounded-full text-xs">
+              {uploading ? <Loader2 className="animate-spin" /> : <Camera />}
+            </button>
+            <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-900">
