@@ -120,8 +120,10 @@ export function TestManagement() {
     setSaving(true);
     try {
       const nextTestNumber = tests.length + 1;
+      const newTestId = crypto.randomUUID();
 
       const { data, error } = await supabase.from("tests").insert({
+        id: newTestId,
         batch_id: batchId,
         name: form.name,
         test_number: nextTestNumber,

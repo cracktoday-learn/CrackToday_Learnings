@@ -98,8 +98,10 @@ export function AdminTests() {
     try {
       const batchTests = tests.filter(t => t.batch_id === selectedBatch.id);
       const nextTestNumber = batchTests.length + 1;
+      const newTestId = crypto.randomUUID();
 
       const { data, error } = await supabase.from("tests").insert({
+        id: newTestId,
         batch_id: selectedBatch.id,
         name: testForm.name,
         test_number: nextTestNumber,
