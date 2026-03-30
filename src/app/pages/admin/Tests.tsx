@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Search, FileText, Clock, Award, Edit, Trash2, ToggleLeft, ToggleRight, X, BookOpen } from "lucide-react";
+import { Plus, Search, FileText, Clock, Award, Edit, Trash2, ToggleLeft, ToggleRight, X, BookOpen, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -15,29 +15,65 @@ interface Batch {
   created_at: string;
 }
 
+interface Test {
+  id: string;
+  batch_id: string;
+  name: string;
+  test_number: number;
+  time_duration: number;
+  question_count: number;
+  created_at: string;
+}
+
 const emptyForm = { name: "", description: "", price: "", total_tests: "", exam_type: "" };
 
 export function AdminTests() {
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showTestForm, setShowTestForm] = useState(false);
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
+  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [testForm, setTestForm] = useState({ name: "", time_duration: "" });
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchBatches(); }, []);
+  useEffect(() => { 
+    fetchBatches(); 
+    fetchTests();
+    setLoading(false);
+  }, []);
 
   const fetchBatches = async () => {
-    setLoading(true);
     try {
       const { data, error } = await supabase.from("batches").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       setBatches(data || []);
     } catch (err) {
       toast.error("Failed to load batches");
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchTests = async () => {
+    try {
+      const { data, error } = await supabase.from("tests").select("*").order("batch_id,test_number");
+      if (error) {
+        console.error("Error fetching tests:", error);
+        // If tests table doesn't exist, just set empty array
+        if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+          setTests([]);
+        } else {
+          toast.error("Failed to load tests: " + error.message);
+          setTests([]);
+        }
+      } else {
+        setTests(data || []);
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setTests([]);
     }
   };
 
@@ -45,6 +81,52 @@ export function AdminTests() {
     setEditingBatch(null);
     setForm(emptyForm);
     setShowForm(true);
+  };
+
+  const openTestForm = (batch: Batch) => {
+    setSelectedBatch(batch);
+    setTestForm({ name: "", time_duration: "" });
+    setShowTestForm(true);
+  };
+
+  const handleSaveTest = async () => {
+    if (!selectedBatch || !testForm.name || !testForm.time_duration) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    setSaving(true);
+    try {
+      const batchTests = tests.filter(t => t.batch_id === selectedBatch.id);
+      const nextTestNumber = batchTests.length + 1;
+
+      const { data, error } = await supabase.from("tests").insert({
+        batch_id: selectedBatch.id,
+        name: testForm.name,
+        test_number: nextTestNumber,
+        time_duration: parseInt(testForm.time_duration),
+        question_count: 0,
+      }).select();
+
+      if (error) {
+        console.error("Error creating test:", error);
+        if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+          toast.error("Tests table not found. Please run the database migration first.");
+        } else {
+          toast.error("Failed to create test: " + error.message);
+        }
+        return;
+      }
+
+      toast.success("Test created successfully!");
+      setShowTestForm(false);
+      setTestForm({ name: "", time_duration: "" });
+      fetchTests();
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast.error("Failed to create test. Please check database connection.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openEditForm = (batch: Batch) => {
@@ -141,6 +223,41 @@ export function AdminTests() {
           <Plus className="h-5 w-5" /> Create New Batch
         </button>
       </div>
+
+      {showTestForm && (
+        <div className="bg-white rounded-2xl border border-indigo-200 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">Add Test to {selectedBatch?.name}</h2>
+            <button onClick={() => setShowTestForm(false)} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700 block mb-1">Test Name *</label>
+              <input type="text" placeholder="e.g. Test 1 - General Knowledge" value={testForm.name}
+                onChange={(e) => setTestForm({ ...testForm, name: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700 block mb-1">Time Duration (minutes) *</label>
+              <input type="number" placeholder="e.g. 60" value={testForm.time_duration}
+                onChange={(e) => setTestForm({ ...testForm, time_duration: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" />
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button onClick={handleSaveTest} disabled={saving}
+              className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50">
+              {saving ? "Saving..." : "Create Test"}
+            </button>
+            <button onClick={() => setShowTestForm(false)}
+              className="bg-white border border-slate-200 text-slate-700 px-6 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-2xl border border-indigo-200 shadow-sm p-6">
@@ -271,7 +388,17 @@ export function AdminTests() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-indigo-600">₹{batch.price}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{batch.total_tests} tests</td>
+                    <td className="px-6 py-4 text-sm text-slate-700">
+  <div className="flex items-center gap-2">
+    <span>{tests.filter(t => t.batch_id === batch.id).length} tests</span>
+            <button 
+              onClick={() => openTestForm(batch)}
+              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+              title="Add Test">
+              <Plus className="h-3 w-3" />
+            </button>
+          </div>
+        </td>
                     <td className="px-6 py-4">
                       <button onClick={() => handleToggleActive(batch)}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
@@ -283,6 +410,17 @@ export function AdminTests() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Link to={`/admin/tests/${batch.id}/manage`}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Manage Tests">
+                          <FileText className="h-4 w-4" />
+                        </Link>
+                        <button 
+                          onClick={() => openTestForm(batch)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Add Test">
+                          <Plus className="h-4 w-4" />
+                        </button>
                         <Link to={`/admin/tests/${batch.id}/questions`}
                           className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                           title="Manage Questions">

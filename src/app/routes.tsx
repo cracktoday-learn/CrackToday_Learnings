@@ -7,11 +7,14 @@ import { Exams } from "./pages/user/Exams";
 import { Pricing } from "./pages/user/Pricing";
 import { Profile } from "./pages/user/Profile";
 import { TakeTest } from "./pages/user/TakeTest";
+import { TestEvaluation } from "./pages/user/TestEvaluation";
 import { Checkout } from "./pages/user/Checkout";
+import { SubscriptionCheckout } from "./pages/user/SubscriptionCheckout";
 import { Leaderboard } from "./pages/user/Leaderboard";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
+import { TestManagement } from "./pages/admin/TestManagement";
 import { AdminQuestions } from "./pages/admin/Questions";
 import { AdminCoupons } from "./pages/admin/Coupons";
 import { Login } from "./pages/auth/Login";
@@ -29,17 +32,30 @@ export const router = createBrowserRouter([
         path: "dashboard",
         element: (<ProtectedRoute><UserDashboard /></ProtectedRoute>),
       },
+      { path: "tests", Component: Exams },
       {
-        path: "profile",
-        element: (<ProtectedRoute><Profile /></ProtectedRoute>),
+        path: "tests/:batchId/manage",
+        element: (<AdminRoute><TestManagement /></AdminRoute>),
+      },
+      {
+        path: "tests/:batchId/questions",
+        element: (<AdminRoute><AdminQuestions /></AdminRoute>),
       },
       {
         path: "test/:batchId",
         element: (<ProtectedRoute><TakeTest /></ProtectedRoute>),
       },
       {
+        path: "test/:batchId/evaluation/:testNumber",
+        element: (<ProtectedRoute><TestEvaluation /></ProtectedRoute>),
+      },
+      {
         path: "checkout/:batchId",
         element: (<ProtectedRoute><Checkout /></ProtectedRoute>),
+      },
+      {
+        path: "checkout/subscription/:planId",
+        element: (<ProtectedRoute><SubscriptionCheckout /></ProtectedRoute>),
       },
       { path: "exams", Component: Exams },
       { path: "pricing", Component: Pricing },
@@ -49,12 +65,13 @@ export const router = createBrowserRouter([
   { path: "/login", Component: Login },
   { path: "/signup", Component: Signup },
   {
-    path: "/admin",
+    path: "admin",
     element: (<AdminRoute><AdminLayout /></AdminRoute>),
     children: [
       { index: true, Component: AdminDashboard },
       { path: "users", Component: AdminUsers },
       { path: "tests", Component: AdminTests },
+      { path: "tests/:batchId/manage", Component: TestManagement },
       { path: "tests/:batchId/questions", Component: AdminQuestions },
       { path: "coupons", Component: AdminCoupons },
     ],

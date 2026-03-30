@@ -1,46 +1,53 @@
-import React from 'react';
-import { BookOpen, Search, Filter, Clock, Users, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { BookOpen, Search, Filter, Clock, Users, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../../utils/supabase/client";
+import { toast } from "sonner";
+
+interface Exam {
+  id: string;
+  name: string;
+  category: string;
+  exam_type: string;
+  price: number;
+  total_tests: number;
+  description: string;
+}
 
 export function Exams() {
-  const exams = [
-    {
-      id: 1,
-      title: "SSC CGL Tier 1",
-      category: "SSC",
-      tests: 24,
-      students: "15k+",
-      duration: "6 Months",
-      price: "₹999"
-    },
-    {
-      id: 2,
-      title: "IBPS PO Prelims",
-      category: "Banking",
-      tests: 20,
-      students: "12k+",
-      duration: "3 Months",
-      price: "₹799"
-    },
-    {
-      id: 3,
-      title: "UPSC CSE Prelims",
-      category: "UPSC",
-      tests: 35,
-      students: "25k+",
-      duration: "1 Year",
-      price: "₹1499"
-    },
-    {
-      id: 4,
-      title: "RRB NTPC CBT 1",
-      category: "Railways",
-      tests: 18,
-      students: "10k+",
-      duration: "4 Months",
-      price: "₹599"
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    fetchExams();
+  }, []);
+
+  const fetchExams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("batches")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setExams(data || []);
+    } catch (err) {
+      toast.error("Failed to load exams");
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const filteredExams = exams.filter(exam => {
+    const categoryMatch = selectedCategory === "All" || exam.exam_type === selectedCategory;
+    const searchMatch = !searchQuery || 
+      exam.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      exam.exam_type.toLowerCase().includes(searchQuery.toLowerCase());
+    return categoryMatch && searchMatch;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
@@ -56,6 +63,8 @@ export function Exams() {
               <input 
                 type="text" 
                 placeholder="Search exams..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
@@ -70,8 +79,9 @@ export function Exams() {
           {["All", "SSC", "Banking", "UPSC", "Railways", "State PSC", "Teaching"].map((category) => (
             <button 
               key={category}
+              onClick={() => setSelectedCategory(category)}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                category === "All" 
+                selectedCategory === category 
                   ? "bg-indigo-600 text-white" 
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
@@ -82,30 +92,30 @@ export function Exams() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {exams.map((exam) => (
+          {filteredExams.map((exam) => (
             <div key={exam.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
-                    {exam.category}
+                    {exam.exam_type}
                   </span>
-                  <span className="text-lg font-bold text-slate-900">{exam.price}</span>
+                  <span className="text-lg font-bold text-slate-900">₹{exam.price}</span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{exam.title}</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">{exam.name}</h3>
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center text-sm text-slate-500">
-                    <BookOpen className="h-4 w-4 mr-2" /> {exam.tests} Full Tests
+                    <BookOpen className="h-4 w-4 mr-2" /> {exam.total_tests} Full Tests
                   </div>
                   <div className="flex items-center text-sm text-slate-500">
-                    <Users className="h-4 w-4 mr-2" /> {exam.students} Enrolled
+                    <Users className="h-4 w-4 mr-2" /> Enrolled Students
                   </div>
                   <div className="flex items-center text-sm text-slate-500">
-                    <Clock className="h-4 w-4 mr-2" /> {exam.duration} Validity
+                    <Clock className="h-4 w-4 mr-2" /> Full Access
                   </div>
                 </div>
               </div>
               <div className="mt-auto p-4 border-t border-slate-100 bg-slate-50/50">
-                <Link to="/dashboard" className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border-2 border-indigo-600 text-indigo-700 rounded-xl font-semibold hover:bg-indigo-600 hover:text-white transition-colors group">
+                <Link to={`/checkout/${exam.id}`} className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border-2 border-indigo-600 text-indigo-700 rounded-xl font-semibold hover:bg-indigo-600 hover:text-white transition-colors group">
                   Enroll Now
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>

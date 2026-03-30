@@ -17,6 +17,7 @@ interface Question {
   explanation: string;
   marks: number;
   negative_marks: number;
+  test_number?: number;
 }
 
 export function TakeTest() {
@@ -24,9 +25,13 @@ export function TakeTest() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [batchName, setBatchName] = useState("");
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentTestNumber, setCurrentTestNumber] = useState(1);
+  const [totalTests, setTotalTests] = useState(1);
+  const [completedTests, setCompletedTests] = useState<number[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(0);
@@ -34,7 +39,7 @@ export function TakeTest() {
   const [testFinished, setTestFinished] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
-  const MINUTES_PER_QUESTION = 1.5;
+  const [testDuration, setTestDuration] = useState(60); // Store test duration in minutes
 
   useEffect(() => {
     fetchData();
@@ -53,12 +58,53 @@ export function TakeTest() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data: batch } = await supabase.from("batches").select("name").eq("id", batchId).single();
+      const { data: batch } = await supabase.from("batches").select("name,total_tests").eq("id", batchId).single();
       setBatchName(batch?.name || "");
-      const { data: qs, error } = await supabase.from("questions").select("*").eq("batch_id", batchId).order("order_number");
+      setTotalTests(batch?.total_tests || 1);
+      
+      // Fetch the current test to get time_duration
+      const { data: testData } = await supabase
+        .from("tests")
+        .select("time_duration")
+        .eq("batch_id", batchId)
+        .eq("test_number", currentTestNumber)
+        .single();
+      
+      const { data: qs, error } = await supabase.from("questions").select("*").eq("batch_id", batchId).order("test_number,order_number");
       if (error) throw error;
-      setQuestions(qs || []);
-      setTimeLeft(Math.round((qs?.length || 10) * MINUTES_PER_QUESTION * 60));
+      
+      if (qs && qs.length > 0) {
+        setAllQuestions(qs);
+        
+        // Group questions by test_number if available, otherwise split into chunks
+        const questionsByTest: { [key: number]: Question[] } = {};
+        
+        if (qs[0].test_number) {
+          // Questions already have test numbers
+          qs.forEach(q => {
+            const testNum = q.test_number || 1;
+            if (!questionsByTest[testNum]) questionsByTest[testNum] = [];
+            questionsByTest[testNum].push(q);
+          });
+        } else {
+          // Split questions into equal chunks based on total_tests
+          const questionsPerTest = Math.ceil(qs.length / (batch?.total_tests || 1));
+          qs.forEach((q, index) => {
+            const testNum = Math.floor(index / questionsPerTest) + 1;
+            if (!questionsByTest[testNum]) questionsByTest[testNum] = [];
+            questionsByTest[testNum].push(q);
+          });
+        }
+        
+        // Set current test questions
+        const currentTestQuestions = questionsByTest[currentTestNumber] || questionsByTest[1] || [];
+        setQuestions(currentTestQuestions);
+        
+        // Use test's time_duration from database, or fallback to calculated time
+        const duration = testData?.time_duration || Math.round(currentTestQuestions.length * 1.5);
+        setTestDuration(duration);
+        setTimeLeft(duration * 60); // Convert minutes to seconds
+      }
     } catch (err) {
       toast.error("Failed to load test");
     } finally {
@@ -90,11 +136,13 @@ export function TakeTest() {
         }
       });
 
-      const timeTaken = Math.round(questions.length * MINUTES_PER_QUESTION * 60) - timeLeft;
+      const timeTaken = testDuration * 60 - timeLeft;
 
+      // Save test attempt for current test
       const { error } = await supabase.from("test_attempts").insert({
         user_id: user?.id,
         batch_id: batchId,
+        test_number: currentTestNumber,
         score: Math.max(0, score),
         total_marks: totalMarks,
         correct_answers: correct,
@@ -106,6 +154,10 @@ export function TakeTest() {
 
       if (error) throw error;
 
+      // Add current test to completed tests
+      const newCompletedTests = [...completedTests, currentTestNumber];
+      setCompletedTests(newCompletedTests);
+
       setResult({
         score: Math.max(0, score),
         totalMarks,
@@ -114,6 +166,9 @@ export function TakeTest() {
         skipped,
         timeTaken,
         percentage: Math.round((Math.max(0, score) / totalMarks) * 100),
+        testNumber: currentTestNumber,
+        totalTests,
+        isLastTest: currentTestNumber === totalTests,
       });
       setTestFinished(true);
     } catch (err) {
@@ -121,7 +176,7 @@ export function TakeTest() {
     } finally {
       setSubmitting(false);
     }
-  }, [answers, questions, timeLeft, submitting]);
+  }, [answers, questions, timeLeft, submitting, currentTestNumber, totalTests, completedTests]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -135,6 +190,62 @@ export function TakeTest() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const startNextTest = async () => {
+    const nextTestNumber = currentTestNumber + 1;
+    if (nextTestNumber <= totalTests) {
+      // Reset state for next test
+      setCurrentTestNumber(nextTestNumber);
+      setCurrentIndex(0);
+      setAnswers({});
+      setFlagged(new Set());
+      setTestStarted(false);
+      setTestFinished(false);
+      setResult(null);
+      
+      // Load next test questions
+      const questionsByTest: { [key: number]: Question[] } = {};
+      
+      if (allQuestions[0]?.test_number) {
+        // Questions already have test numbers
+        allQuestions.forEach(q => {
+          const testNum = q.test_number || 1;
+          if (!questionsByTest[testNum]) questionsByTest[testNum] = [];
+          questionsByTest[testNum].push(q);
+        });
+      } else {
+        // Split questions into equal chunks based on total_tests
+        const questionsPerTest = Math.ceil(allQuestions.length / totalTests);
+        allQuestions.forEach((q, index) => {
+          const testNum = Math.floor(index / questionsPerTest) + 1;
+          if (!questionsByTest[testNum]) questionsByTest[testNum] = [];
+          questionsByTest[testNum].push(q);
+        });
+      }
+      
+      const nextTestQuestions = questionsByTest[nextTestNumber] || [];
+      setQuestions(nextTestQuestions);
+      
+      // Fetch duration for next test
+      try {
+        const { data: nextTestData } = await supabase
+          .from("tests")
+          .select("time_duration")
+          .eq("batch_id", batchId)
+          .eq("test_number", nextTestNumber)
+          .single();
+        
+        const nextDuration = nextTestData?.time_duration || Math.round(nextTestQuestions.length * 1.5);
+        setTestDuration(nextDuration);
+        setTimeLeft(nextDuration * 60);
+      } catch (err) {
+        // Fallback if test data not found
+        const fallbackDuration = Math.round(nextTestQuestions.length * 1.5);
+        setTestDuration(fallbackDuration);
+        setTimeLeft(fallbackDuration * 60);
+      }
+    }
   };
 
   const currentQuestion = questions[currentIndex];
@@ -172,6 +283,10 @@ export function TakeTest() {
           <p className="text-slate-500 mb-6">Read the instructions carefully before starting.</p>
           <div className="space-y-3 mb-8">
             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+              <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">Test {currentTestNumber}/{totalTests}</div>
+              <p className="text-sm text-slate-700">Current Test</p>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
               <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">{questions.length}</div>
               <p className="text-sm text-slate-700">Total Questions</p>
             </div>
@@ -187,7 +302,7 @@ export function TakeTest() {
               <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                 <Clock className="h-4 w-4" />
               </div>
-              <p className="text-sm text-slate-700">Time: {Math.round(questions.length * MINUTES_PER_QUESTION)} minutes</p>
+              <p className="text-sm text-slate-700">Time: {testDuration} minutes</p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -214,9 +329,10 @@ export function TakeTest() {
                 ? <CheckCircle className="h-10 w-10 text-emerald-600" />
                 : <AlertCircle className="h-10 w-10 text-red-600" />}
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-1">{result.percentage}%</h1>
+            <h1 className="text-3xl font-bold text-slate-900 mb-1">Test {result.testNumber} Complete!</h1>
             <p className="text-slate-500 mb-2">{result.percentage >= 60 ? "🎉 Great job! You passed!" : "Keep practicing! You can do better!"}</p>
             <p className="text-2xl font-bold text-indigo-600">{result.score} / {result.totalMarks} marks</p>
+            <p className="text-sm text-slate-500 mt-2">Test {result.testNumber} of {result.totalTests}</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -271,9 +387,39 @@ export function TakeTest() {
             </div>
           </div>
 
-          <button onClick={() => navigate("/dashboard")} className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors">
-            Back to Dashboard
-          </button>
+          <div className="flex gap-3">
+            {!result.isLastTest ? (
+              <>
+                <button 
+                  onClick={() => navigate(`/test/${batchId}/evaluation/${result.testNumber}`)}
+                  className="flex-1 bg-emerald-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                >
+                  View Evaluation & Ranking
+                </button>
+                <button 
+                  onClick={() => navigate("/dashboard")}
+                  className="flex-1 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
+                >
+                  Back to Dashboard
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => navigate(`/test/${batchId}/evaluation/${result.testNumber}`)}
+                  className="flex-1 bg-emerald-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                >
+                  View Final Evaluation
+                </button>
+                <button 
+                  onClick={() => navigate("/dashboard")}
+                  className="flex-1 bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  Complete Batch
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -285,7 +431,10 @@ export function TakeTest() {
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="text-sm font-bold text-slate-900 truncate max-w-xs">{batchName}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-bold text-slate-900 truncate max-w-xs">{batchName}</h1>
+            <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Test {currentTestNumber}/{totalTests}</span>
+          </div>
           <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-sm ${timeLeft <= 60 ? "bg-red-100 text-red-600 animate-pulse" : timeLeft <= 300 ? "bg-orange-100 text-orange-600" : "bg-indigo-100 text-indigo-600"}`}>
             <Clock className="h-4 w-4" />
             {formatTime(timeLeft)}

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – Upload Question Papers | CrackToday</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --card: #1e2333;
+    --border: #2a2f42;
+    --accent: #4f6ef7;
+    --accent-light: #7b96ff;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --text: #e8eaf0;
+    --text-muted: #8b93a8;
+    --text-dim: #4e5672;
+    --radius: 10px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .topbar-logo { font-weight: 600; font-size: 17px; color: var(--accent-light); letter-spacing: -0.3px; }
+  .topbar-sep { color: var(--text-dim); }
+  .topbar-title { font-size: 14px; color: var(--text-muted); }
+
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; padding: 28px; max-width: 1280px; margin: 0 auto; }
+
+  /* ── Left Panel ── */
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .panel-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--text-dim); margin-bottom: 16px; }
+
+  .batch-list { display: flex; flex-direction: column; gap: 6px; }
+  .batch-item {
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid transparent; transition: all .15s;
+    font-size: 14px;
+  }
+  .batch-item:hover { background: var(--surface); border-color: var(--border); }
+  .batch-item.active { background: rgba(79,110,247,.12); border-color: var(--accent); color: var(--accent-light); }
+  .batch-item-name { font-weight: 500; }
+  .batch-item-count { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .new-batch-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; color: var(--text); font-family: var(--font); font-size: 14px;
+    outline: none; transition: border-color .15s; }
+  .input:focus { border-color: var(--accent); }
+  .input::placeholder { color: var(--text-dim); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
+    border-radius: 8px; font-family: var(--font); font-size: 14px; font-weight: 500;
+    cursor: pointer; border: none; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3f5ce0; }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface); }
+  .btn-danger { background: rgba(239,68,68,.12); color: var(--danger); border: 1px solid rgba(239,68,68,.2); }
+  .btn-danger:hover { background: rgba(239,68,68,.2); }
+  .gap-2 { gap: 8px; }
+  .mt-2 { margin-top: 8px; }
+  .mt-3 { margin-top: 12px; }
+  .w-full { width: 100%; }
+  .flex { display: flex; }
+  .col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+
+  /* ── Right Panel – Upload Area ── */
+  .upload-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .upload-heading { font-size: 18px; font-weight: 600; }
+  .upload-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 36px; text-align: center; cursor: pointer;
+    transition: all .2s; margin-bottom: 20px; position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(79,110,247,.05); }
+  .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .drop-icon { font-size: 36px; margin-bottom: 10px; }
+  .drop-title { font-size: 15px; font-weight: 500; }
+  .drop-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .drop-format { margin-top: 12px; font-size: 11px; font-family: var(--mono); background: var(--surface);
+    display: inline-block; padding: 4px 10px; border-radius: 6px; color: var(--text-muted); }
+
+  /* ── Upload Queue ── */
+  .queue-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; display: grid;
+    grid-template-columns: 1fr auto auto auto; gap: 12px; align-items: center;
+  }
+  .queue-name { font-size: 14px; font-weight: 500; }
+  .queue-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .queue-duration { display: flex; align-items: center; gap: 4px; }
+  .queue-duration input { width: 56px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 8px; color: var(--text); font-size: 13px; font-family: var(--mono); text-align: center; outline: none; }
+  .queue-duration input:focus { border-color: var(--accent); }
+  .queue-duration label { font-size: 11px; color: var(--text-dim); }
+  .queue-order { display: flex; gap: 4px; }
+  .order-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted); cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; transition: all .1s; }
+  .order-btn:hover { background: var(--card); color: var(--text); }
+  .tag-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+  .tag-csv { background: rgba(79,110,247,.12); color: var(--accent-light); }
+  .tag-ok { background: rgba(34,197,94,.12); color: var(--success); }
+  .tag-err { background: rgba(239,68,68,.12); color: var(--danger); }
+  .tag-num { background: rgba(245,158,11,.12); color: var(--warning); }
+
+  /* ── Progress / Toast ── */
+  .progress-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; margin: 4px 0; overflow: hidden; }
+  .progress-bar { height: 4px; background: var(--accent); border-radius: 2px; transition: width .3s; }
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; padding: 12px 18px;
+    border-radius: var(--radius); font-size: 14px; font-weight: 500;
+    opacity: 0; transform: translateY(8px); transition: all .3s; pointer-events: none;
+    z-index: 999;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.success { background: rgba(34,197,94,.15); border: 1px solid var(--success); color: var(--success); }
+  #toast.error { background: rgba(239,68,68,.15); border: 1px solid var(--danger); color: var(--danger); }
+
+  /* ── Paper Cards (existing) ── */
+  .papers-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .paper-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .paper-card-order { width: 28px; height: 28px; border-radius: 6px; background: rgba(79,110,247,.12);
+    color: var(--accent-light); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .paper-card-info { flex: 1; margin-left: 12px; }
+  .paper-card-name { font-size: 14px; font-weight: 500; }
+  .paper-card-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .empty { text-align: center; padding: 48px 24px; color: var(--text-dim); font-size: 14px; }
+  .empty-icon { font-size: 32px; margin-bottom: 10px; }
+
+  .csv-hint {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 20px;
+  }
+  .csv-hint-title { font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 8px; }
+  .csv-row { font-family: var(--mono); font-size: 12px; color: var(--text-muted); line-height: 2; }
+  .csv-col { color: var(--accent-light); }
+
+  .section-sep { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .no-batch { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 300px; color: var(--text-dim); font-size: 14px; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">⚡ CrackToday</span>
+  <span class="topbar-sep">/</span>
+  <span class="topbar-title">Admin – Question Papers</span>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: Batch List -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">Test Batches</div>
+      <div class="batch-list" id="batchList">
+        <div class="empty" style="padding:24px 0">Loading…</div>
+      </div>
+      <div class="new-batch-form">
+        <div class="panel-title">New Batch</div>
+        <input class="input" id="newBatchTitle" placeholder="e.g. TNPSC Group 4 – 2025" />
+        <textarea class="input mt-2" id="newBatchDesc" rows="2" placeholder="Description (optional)"
+          style="resize:none"></textarea>
+        <button class="btn btn-primary w-full mt-2" id="createBatchBtn" onclick="createBatch()">
+          + Create Batch
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Upload & Paper List -->
+  <div>
+    <div id="noBatchMsg" class="no-batch">
+      <div style="font-size:32px">📋</div>
+      <div>Select or create a batch to upload question papers</div>
+    </div>
+
+    <div id="uploadSection" style="display:none">
+      <div class="upload-header">
+        <div>
+          <div class="upload-heading" id="uploadHeading">Upload Papers</div>
+          <div class="upload-sub">Upload multiple CSV question papers in sequence</div>
+        </div>
+        <button class="btn btn-primary" id="uploadAllBtn" onclick="uploadAll()" disabled>
+          ⬆ Upload All
+        </button>
+      </div>
+
+      <!-- CSV Format hint -->
+      <div class="csv-hint">
+        <div class="csv-hint-title">CSV Format (each file = one question paper)</div>
+        <div class="csv-row">
+          <span class="csv-col">question_no</span>,
+          <span class="csv-col">question_text</span>,
+          <span class="csv-col">option_a</span>,
+          <span class="csv-col">option_b</span>,
+          <span class="csv-col">option_c</span>,
+          <span class="csv-col">option_d</span>,
+          <span class="csv-col">correct_answer</span>,
+          <span class="csv-col">explanation</span>
+        </div>
+        <div class="csv-row" style="color:var(--text-dim)">
+          1, "What is 2+2?", "3", "4", "5", "6", B, "Basic arithmetic"
+        </div>
+      </div>
+
+      <!-- Drop Zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".csv" multiple onchange="handleFiles(this.files)" />
+        <div class="drop-icon">📂</div>
+        <div class="drop-title">Drop CSV files here or click to browse</div>
+        <div class="drop-sub">You can select multiple files at once</div>
+        <div class="drop-format">question_no, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation</div>
+      </div>
+
+      <!-- Upload Queue -->
+      <div id="uploadQueue"></div>
+
+      <hr class="section-sep" />
+
+      <!-- Existing Papers -->
+      <div class="panel-title">Uploaded Papers</div>
+      <div id="papersList">
+        <div class="empty"><div class="empty-icon">📄</div>No papers yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let activeBatch = null;
+let uploadQueue = [];  // [{file, name, rows, duration}]
+
+// ── INIT ──
+loadBatches();
+
+async function loadBatches() {
+  const { data, error } = await sb.from('test_batches').select('*').order('created_at', { ascending: false });
+  if (error) { toast('Failed to load batches', 'error'); return; }
+  renderBatchList(data || []);
+}
+
+function renderBatchList(batches) {
+  const el = document.getElementById('batchList');
+  if (!batches.length) {
+    el.innerHTML = '<div class="empty" style="padding:16px 0;font-size:13px">No batches yet</div>';
+    return;
+  }
+  el.innerHTML = batches.map(b => `
+    <div class="batch-item ${activeBatch?.id === b.id ? 'active' : ''}" onclick="selectBatch(${JSON.stringify(b).replace(/"/g,"'")})">
+      <div class="batch-item-name">${b.title}</div>
+      <div class="batch-item-count" id="bcount-${b.id}">Loading…</div>
+    </div>
+  `).join('');
+  batches.forEach(b => loadBatchCount(b.id));
+}
+
+async function loadBatchCount(batchId) {
+  const { count } = await sb.from('question_papers').select('*', { count: 'exact', head: true }).eq('batch_id', batchId);
+  const el = document.getElementById(`bcount-${batchId}`);
+  if (el) el.textContent = `${count || 0} paper${count !== 1 ? 's' : ''}`;
+}
+
+function selectBatch(batch) {
+  activeBatch = batch;
+  document.getElementById('noBatchMsg').style.display = 'none';
+  document.getElementById('uploadSection').style.display = 'block';
+  document.getElementById('uploadHeading').textContent = batch.title;
+  uploadQueue = [];
+  renderQueue();
+  loadPapers();
+  loadBatches();
+}
+
+async function createBatch() {
+  const title = document.getElementById('newBatchTitle').value.trim();
+  if (!title) { toast('Enter a batch title', 'error'); return; }
+  const desc = document.getElementById('newBatchDesc').value.trim();
+  const btn = document.getElementById('createBatchBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  const { data, error } = await sb.from('test_batches').insert({ title, description: desc || null }).select().single();
+  btn.disabled = false; btn.textContent = '+ Create Batch';
+  if (error) { toast('Failed to create batch', 'error'); return; }
+  document.getElementById('newBatchTitle').value = '';
+  document.getElementById('newBatchDesc').value = '';
+  toast('Batch created!', 'success');
+  selectBatch(data);
+}
+
+// ── CSV HANDLING ──
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+
+function handleFiles(files) {
+  if (!activeBatch) { toast('Select a batch first', 'error'); return; }
+  const csvFiles = Array.from(files).filter(f => f.name.endsWith('.csv'));
+  if (!csvFiles.length) { toast('Only CSV files are accepted', 'error'); return; }
+
+  Promise.all(csvFiles.map(parseCSV)).then(results => {
+    results.forEach((result, i) => {
+      const exists = uploadQueue.find(q => q.file.name === result.file.name);
+      if (!exists) uploadQueue.push({ ...result, order: uploadQueue.length + 1, duration: 30 });
+    });
+    renderQueue();
+    document.getElementById('uploadAllBtn').disabled = false;
+  });
+}
+
+function parseCSV(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.trim().split('\n').filter(l => l.trim());
+      const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
+      const required = ['question_no','question_text','option_a','option_b','option_c','option_d','correct_answer'];
+      const missing = required.filter(r => !headers.includes(r));
+      const rows = [];
+      const errors = [...missing.map(m => `Missing column: ${m}`)];
+
+      for (let i = 1; i < lines.length; i++) {
+        const vals = parseCSVLine(lines[i]);
+        const row = {};
+        headers.forEach((h, idx) => row[h] = (vals[idx] || '').trim());
+        if (!['A','B','C','D'].includes(row.correct_answer?.toUpperCase())) {
+          errors.push(`Row ${i}: correct_answer must be A/B/C/D`);
+        } else {
+          row.correct_answer = row.correct_answer.toUpperCase();
+          rows.push(row);
+        }
+      }
+      resolve({ file, rows, errors, name: file.name.replace('.csv','') });
+    };
+    reader.readAsText(file);
+  });
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let inQuotes = false, current = '';
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQuotes = !inQuotes; continue; }
+    if (line[i] === ',' && !inQuotes) { result.push(current); current = ''; continue; }
+    current += line[i];
+  }
+  result.push(current);
+  return result;
+}
+
+function renderQueue() {
+  const el = document.getElementById('uploadQueue');
+  if (!uploadQueue.length) { el.innerHTML = ''; return; }
+  el.innerHTML = uploadQueue.map((item, i) => `
+    <div class="queue-item" id="qi-${i}">
+      <div>
+        <div class="queue-name">${item.name}</div>
+        <div class="queue-meta">
+          ${item.rows.length} questions
+          ${item.errors.length ? `<span class="tag-badge tag-err" style="margin-left:6px">⚠ ${item.errors.length} error(s)</span>` : '<span class="tag-badge tag-ok" style="margin-left:6px">✓ Valid</span>'}
+        </div>
+        ${item.errors.length ? `<div style="font-size:11px;color:var(--danger);margin-top:4px">${item.errors[0]}</div>` : ''}
+        <div class="progress-bar-wrap" id="pb-${i}"><div class="progress-bar" style="width:0%" id="pbfill-${i}"></div></div>
+      </div>
+      <div class="queue-duration">
+        <input type="number" value="${item.duration}" min="1" max="300"
+          onchange="uploadQueue[${i}].duration=parseInt(this.value)||30" />
+        <label>min</label>
+      </div>
+      <div class="queue-order">
+        <button class="order-btn" onclick="moveItem(${i},-1)" title="Move up">↑</button>
+        <button class="order-btn" onclick="moveItem(${i},1)" title="Move down">↓</button>
+      </div>
+      <button class="btn btn-danger" style="padding:6px 10px;font-size:12px" onclick="removeItem(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function moveItem(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= uploadQueue.length) return;
+  [uploadQueue[i], uploadQueue[j]] = [uploadQueue[j], uploadQueue[i]];
+  renderQueue();
+}
+function removeItem(i) {
+  uploadQueue.splice(i, 1);
+  renderQueue();
+  if (!uploadQueue.length) document.getElementById('uploadAllBtn').disabled = true;
+}
+
+// ── UPLOAD ALL ──
+async function uploadAll() {
+  if (!activeBatch || !uploadQueue.length) return;
+  const btn = document.getElementById('uploadAllBtn');
+  btn.disabled = true; btn.textContent = '⏳ Uploading…';
+
+  // Get current max paper_order in batch
+  const { data: existingPapers } = await sb.from('question_papers')
+    .select('paper_order').eq('batch_id', activeBatch.id).order('paper_order', { ascending: false }).limit(1);
+  let orderOffset = existingPapers?.[0]?.paper_order || 0;
+
+  let successCount = 0;
+  for (let i = 0; i < uploadQueue.length; i++) {
+    const item = uploadQueue[i];
+    if (item.errors.length) { toast(`Skipped "${item.name}" – has errors`, 'error'); continue; }
+
+    setProgress(i, 20);
+
+    // Insert paper
+    const { data: paper, error: paperErr } = await sb.from('question_papers').insert({
+      batch_id: activeBatch.id,
+      title: item.name,
+      paper_order: orderOffset + i + 1,
+      duration_minutes: item.duration
+    }).select().single();
+
+    if (paperErr) { toast(`Failed to save "${item.name}"`, 'error'); setProgress(i, 0); continue; }
+    setProgress(i, 40);
+
+    // Insert questions in batches of 100
+    const questions = item.rows.map((row, idx) => ({
+      paper_id: paper.id,
+      question_no: parseInt(row.question_no) || (idx + 1),
+      question_text: row.question_text,
+      option_a: row.option_a,
+      option_b: row.option_b,
+      option_c: row.option_c,
+      option_d: row.option_d,
+      correct_answer: row.correct_answer,
+      explanation: row.explanation || null
+    }));
+
+    const chunkSize = 100;
+    let progress = 40;
+    for (let c = 0; c < questions.length; c += chunkSize) {
+      const chunk = questions.slice(c, c + chunkSize);
+      const { error: qErr } = await sb.from('questions').insert(chunk);
+      if (qErr) { toast(`Error inserting questions in "${item.name}"`, 'error'); break; }
+      progress = 40 + Math.round(((c + chunk.length) / questions.length) * 60);
+      setProgress(i, progress);
+    }
+
+    setProgress(i, 100);
+    successCount++;
+  }
+
+  btn.disabled = false; btn.textContent = '⬆ Upload All';
+  uploadQueue = uploadQueue.filter(item => item.errors.length > 0);
+  renderQueue();
+  loadPapers();
+  loadBatchCount(activeBatch.id);
+  if (successCount > 0) toast(`${successCount} paper(s) uploaded!`, 'success');
+}
+
+function setProgress(i, val) {
+  const el = document.getElementById(`pbfill-${i}`);
+  if (el) el.style.width = val + '%';
+}
+
+// ── EXISTING PAPERS ──
+async function loadPapers() {
+  if (!activeBatch) return;
+  const { data, error } = await sb.from('question_papers')
+    .select('*, questions(count)')
+    .eq('batch_id', activeBatch.id)
+    .order('order', { ascending: true });
+
+  const el = document.getElementById('papersList');
+  if (error || !data?.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📄</div>No papers uploaded yet</div>';
+    return;
+  }
+  el.innerHTML = `<div class="papers-grid">` + data.map(p => `
+    <div class="paper-card">
+      <div class="paper-card-order">${p.paper_order}</div>
+      <div class="paper-card-info">
+        <div class="paper-card-name">${p.title}</div>
+        <div class="paper-card-meta">${p.questions[0]?.count || 0} questions · ${p.duration_minutes} min</div>
+      </div>
+      <button class="btn btn-danger" style="padding:6px 10px;font-size:12px" onclick="deletePaper('${p.id}')">Delete</button>
+    </div>
+  `).join('') + `</div>`;
+}
+
+async function deletePaper(paperId) {
+  if (!confirm('Delete this paper and all its questions?')) return;
+  await sb.from('question_papers').delete().eq('id', paperId);
+  loadPapers();
+  loadBatchCount(activeBatch.id);
+  toast('Paper deleted', 'success');
+}
+
+// ── TOAST ──
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  setTimeout(() => el.className = '', 3000);
+}
+</script>
+</body>
+</html>

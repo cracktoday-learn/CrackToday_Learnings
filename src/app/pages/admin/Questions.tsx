@@ -3,10 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import { Plus, Trash2, Edit, ArrowLeft, Upload, CheckCircle, X, FileText } from "lucide-react";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 interface Question {
   id: string;
   batch_id: string;
+  test_id?: string;
+  test_number?: number;
   question: string;
   type: string;
   option_a: string;
@@ -18,6 +21,15 @@ interface Question {
   marks: number;
   negative_marks: number;
   order_number: number;
+}
+
+interface Test {
+  id: string;
+  batch_id: string;
+  name: string;
+  test_number: number;
+  time_duration: number;
+  question_count: number;
 }
 
 const emptyForm = {
@@ -36,6 +48,8 @@ const emptyForm = {
 export function AdminQuestions() {
   const { batchId } = useParams();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [tests, setTests] = useState<Test[]>([]);
+  const [selectedTestId, setSelectedTestId] = useState<string>("");
   const [batchName, setBatchName] = useState("");
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -47,12 +61,36 @@ export function AdminQuestions() {
 
   useEffect(() => {
     fetchBatch();
+    fetchTests();
     fetchQuestions();
   }, [batchId]);
 
   const fetchBatch = async () => {
     const { data } = await supabase.from("batches").select("name").eq("id", batchId).single();
     setBatchName(data?.name || "");
+  };
+
+  const fetchTests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("tests")
+        .select("*")
+        .eq("batch_id", batchId)
+        .order("test_number");
+      if (error) {
+        console.error("Error fetching tests:", error);
+        setTests([]);
+      } else {
+        setTests(data || []);
+        // Auto-select first test if available
+        if (data && data.length > 0 && !selectedTestId) {
+          setSelectedTestId(data[0].id);
+        }
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setTests([]);
+    }
   };
 
   const fetchQuestions = async () => {
@@ -108,6 +146,8 @@ export function AdminQuestions() {
     try {
       const payload = {
         batch_id: batchId,
+        test_id: selectedTestId || null,
+        test_number: selectedTestId ? tests.find(t => t.id === selectedTestId)?.test_number || 1 : 1,
         question: form.question,
         type: form.type,
         option_a: form.type === "mcq" ? form.option_a : "True",
@@ -153,23 +193,38 @@ export function AdminQuestions() {
     }
   };
 
-  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     try {
-      const text = await file.text();
-      const lines = text.split("\n").filter(l => l.trim());
-      const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
-      const rows = lines.slice(1);
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      
+      if (jsonData.length < 2) {
+        toast.error("Excel file is empty or has no data");
+        return;
+      }
+      
+      const headers = jsonData[0].map((h: any) => String(h).trim().toLowerCase());
+      const rows = jsonData.slice(1);
       let successCount = 0;
+      
       for (let i = 0; i < rows.length; i++) {
-        const cols = rows[i].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
+        const cols = rows[i];
         if (cols.length < 3) continue;
+        
         const row: any = {};
-        headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+        headers.forEach((h: string, idx: number) => { 
+          row[h] = cols[idx] !== undefined ? String(cols[idx]) : ""; 
+        });
+        
         const payload = {
           batch_id: batchId,
+          test_id: selectedTestId || null,
+          test_number: selectedTestId ? tests.find(t => t.id === selectedTestId)?.test_number || 1 : 1,
           question: row["question"] || row["q"] || "",
           type: (row["type"] || "mcq").toLowerCase(),
           option_a: row["option_a"] || row["a"] || "True",
@@ -182,31 +237,67 @@ export function AdminQuestions() {
           negative_marks: parseFloat(row["negative_marks"]) || 0.25,
           order_number: questions.length + i + 1,
         };
+        
         if (!payload.question || !payload.correct_answer) continue;
         const { error } = await supabase.from("questions").insert(payload);
         if (!error) successCount++;
       }
+      
       toast.success(`${successCount} questions uploaded successfully!`);
       fetchQuestions();
     } catch (err) {
-      toast.error("Failed to upload CSV");
+      console.error("Excel upload error:", err);
+      toast.error("Failed to upload Excel file. Please check the format.");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
 
-  const downloadSampleCSV = () => {
-    const sample = `question,type,option_a,option_b,option_c,option_d,correct_answer,explanation,marks,negative_marks
-"What is the capital of India?",mcq,Mumbai,Delhi,Chennai,Kolkata,B,"Delhi is the capital of India",1,0.25
-"The sun rises in the east.",tf,True,False,,,A,"The sun rises in the east",1,0.25
-"2 + 2 = ?",mcq,3,4,5,6,B,"Basic arithmetic",1,0.25`;
-    const blob = new Blob([sample], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sample_questions.csv";
-    a.click();
+  const downloadSampleExcel = () => {
+    const sampleData = [
+      {
+        question: "What is the capital of India?",
+        type: "mcq",
+        option_a: "Mumbai",
+        option_b: "Delhi",
+        option_c: "Chennai",
+        option_d: "Kolkata",
+        correct_answer: "B",
+        explanation: "Delhi is the capital of India",
+        marks: 1,
+        negative_marks: 0.25
+      },
+      {
+        question: "The sun rises in the east.",
+        type: "tf",
+        option_a: "True",
+        option_b: "False",
+        option_c: "",
+        option_d: "",
+        correct_answer: "A",
+        explanation: "The sun rises in the east",
+        marks: 1,
+        negative_marks: 0.25
+      },
+      {
+        question: "2 + 2 = ?",
+        type: "mcq",
+        option_a: "3",
+        option_b: "4",
+        option_c: "5",
+        option_d: "6",
+        correct_answer: "B",
+        explanation: "Basic arithmetic",
+        marks: 1,
+        negative_marks: 0.25
+      }
+    ];
+    
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Questions");
+    XLSX.writeFile(workbook, "sample_questions.xlsx");
   };
 
   return (
@@ -221,17 +312,34 @@ export function AdminQuestions() {
           <h1 className="text-2xl font-bold text-slate-900">{batchName}</h1>
           <p className="text-slate-500 text-sm">{questions.length} questions total</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Test Selector */}
+          {tests.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-slate-700">Upload to Test:</label>
+              <select
+                value={selectedTestId}
+                onChange={(e) => setSelectedTestId(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+              >
+                {tests.map((test) => (
+                  <option key={test.id} value={test.id}>
+                    {test.name} (Test {test.test_number})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
-            onClick={downloadSampleCSV}
+            onClick={downloadSampleExcel}
             className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
           >
-            <FileText className="h-4 w-4" /> Sample CSV
+            <FileText className="h-4 w-4" /> Sample Excel
           </button>
           <label className={`flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors cursor-pointer ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}>
             <Upload className="h-4 w-4" />
-            {uploading ? "Uploading..." : "Upload CSV"}
-            <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleCSVUpload} disabled={uploading} />
+            {uploading ? "Uploading..." : "Upload Excel"}
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcelUpload} disabled={uploading} />
           </label>
           <button
             onClick={openCreateForm}

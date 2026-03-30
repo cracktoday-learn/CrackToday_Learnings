@@ -115,7 +115,7 @@ export function Pricing() {
               </div>
 
               <Link 
-                to="/dashboard" 
+                to={plan.name === "Basic" ? "/dashboard" : `/checkout/subscription/${plan.name.toLowerCase()}`} 
                 className={`w-full py-4 px-6 rounded-xl font-bold text-center transition-all ${
                   plan.popular
                     ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-xl"
