@@ -6,16 +6,16 @@ import { useAuth } from "../../components/AuthProvider";
 
 // DUMMY DATA - Replace with real data from Supabase when you have users
 const DUMMY_RANKINGS = [
-  { id: "1", rank: 1, name: "Rahul Kumar", score: 95, totalMarks: 100, accuracy: 95, timeTaken: 1800, testsCompleted: 15, avatar: "RK" },
-  { id: "2", rank: 2, name: "Priya Sharma", score: 92, totalMarks: 100, accuracy: 92, timeTaken: 1950, testsCompleted: 12, avatar: "PS" },
-  { id: "3", rank: 3, name: "Amit Patel", score: 89, totalMarks: 100, accuracy: 89, timeTaken: 2100, testsCompleted: 18, avatar: "AP" },
-  { id: "4", rank: 4, name: "Sneha Gupta", score: 87, totalMarks: 100, accuracy: 87, timeTaken: 1750, testsCompleted: 10, avatar: "SG" },
-  { id: "5", rank: 5, name: "Vikram Singh", score: 85, totalMarks: 100, accuracy: 85, timeTaken: 2200, testsCompleted: 14, avatar: "VS" },
-  { id: "6", rank: 6, name: "Neha Reddy", score: 83, totalMarks: 100, accuracy: 83, timeTaken: 2000, testsCompleted: 11, avatar: "NR" },
-  { id: "7", rank: 7, name: "Arjun Nair", score: 81, totalMarks: 100, accuracy: 81, timeTaken: 1850, testsCompleted: 16, avatar: "AN" },
-  { id: "8", rank: 8, name: "Divya Iyer", score: 79, totalMarks: 100, accuracy: 79, timeTaken: 2050, testsCompleted: 9, avatar: "DI" },
-  { id: "9", rank: 9, name: "Karan Mehta", score: 77, totalMarks: 100, accuracy: 77, timeTaken: 2150, testsCompleted: 13, avatar: "KM" },
-  { id: "10", rank: 10, name: "Ananya Bose", score: 75, totalMarks: 100, accuracy: 75, timeTaken: 1900, testsCompleted: 8, avatar: "AB" },
+  { id: "1", rank: 1, name: "Rahul Kumar", score: 95, totalMarks: 100, accuracy: 95, timeTaken: 1800, testsCompleted: 15, avatar: "RK", date: new Date().toISOString() },
+  { id: "2", rank: 2, name: "Priya Sharma", score: 92, totalMarks: 100, accuracy: 92, timeTaken: 1950, testsCompleted: 12, avatar: "PS", date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: "3", rank: 3, name: "Amit Patel", score: 89, totalMarks: 100, accuracy: 89, timeTaken: 2100, testsCompleted: 18, avatar: "AP", date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: "4", rank: 4, name: "Sneha Gupta", score: 87, totalMarks: 100, accuracy: 87, timeTaken: 1750, testsCompleted: 10, avatar: "SG", date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: "5", rank: 5, name: "Vikram Singh", score: 85, totalMarks: 100, accuracy: 85, timeTaken: 2200, testsCompleted: 14, avatar: "VS", date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: "6", rank: 6, name: "Neha Reddy", score: 83, totalMarks: 100, accuracy: 83, timeTaken: 2000, testsCompleted: 11, avatar: "NR", date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: "7", rank: 7, name: "Arjun Nair", score: 81, totalMarks: 100, accuracy: 81, timeTaken: 1850, testsCompleted: 16, avatar: "AN", date: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: "8", rank: 8, name: "Divya Iyer", score: 79, totalMarks: 100, accuracy: 79, timeTaken: 2050, testsCompleted: 9, avatar: "DI", date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: "9", rank: 9, name: "Karan Mehta", score: 77, totalMarks: 100, accuracy: 77, timeTaken: 2150, testsCompleted: 13, avatar: "KM", date: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: "10", rank: 10, name: "Ananya Bose", score: 75, totalMarks: 100, accuracy: 75, timeTaken: 1900, testsCompleted: 8, avatar: "AB", date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString() },
 ];
 
 interface RankingUser {
@@ -28,6 +28,7 @@ interface RankingUser {
   timeTaken: number;
   testsCompleted: number;
   avatar: string;
+  date?: string;
 }
 
 export function Rankings() {
@@ -100,6 +101,25 @@ export function Rankings() {
     }
   };
   */
+
+  // Filter rankings based on time filter
+  const filteredRankings = (() => {
+    if (timeFilter === "all") return rankings;
+    
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    if (timeFilter === "weekly") {
+      cutoffDate.setDate(now.getDate() - 7);
+    } else if (timeFilter === "monthly") {
+      cutoffDate.setDate(now.getDate() - 30);
+    }
+    
+    return rankings.filter(user => {
+      if (!user.date) return true;
+      return new Date(user.date) >= cutoffDate;
+    });
+  })();
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -224,11 +244,13 @@ export function Rankings() {
           {/* Top 3 Podium */}
           <div className="bg-gradient-to-b from-indigo-50 to-white p-6">
             <div className="flex justify-center items-end gap-4 md:gap-8">
-              {rankings.slice(0, 3).map((user, index) => {
+              {filteredRankings.slice(0, 3).map((user, index) => {
                 const heights = ["h-32", "h-40", "h-28"];
                 const positions = [2, 1, 3];
                 const actualIndex = index === 0 ? 1 : index === 1 ? 0 : 2;
-                const userAtPos = rankings[actualIndex];
+                const userAtPos = filteredRankings[actualIndex];
+                
+                if (!userAtPos) return null;
                 
                 return (
                   <div key={userAtPos.id} className="flex flex-col items-center">
@@ -250,7 +272,7 @@ export function Rankings() {
 
           {/* List View */}
           <div className="divide-y divide-slate-100">
-            {rankings.slice(3).map((user) => (
+            {filteredRankings.slice(3).map((user) => (
               <div key={user.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold">
                   {user.avatar}
