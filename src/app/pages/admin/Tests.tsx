@@ -96,28 +96,38 @@ export function AdminTests() {
     }
     setSaving(true);
     try {
-      // Get the actual max test_number from database
-      const { data: maxTestData } = await supabase
+      // Get all existing test numbers for this batch
+      const { data: existingTests } = await supabase
         .from("tests")
         .select("test_number")
         .eq("batch_id", selectedBatch.id)
-        .order("test_number", { ascending: false })
-        .limit(1);
+        .order("test_number");
       
-      const nextTestNumber = maxTestData && maxTestData.length > 0 
-        ? maxTestData[0].test_number + 1 
-        : 1;
+      // Find first available gap (1, 2, 3, 5 → returns 4)
+      let nextTestNumber = 1;
+      if (existingTests && existingTests.length > 0) {
+        const usedNumbers = new Set(existingTests.map(t => t.test_number));
+        while (usedNumbers.has(nextTestNumber)) {
+          nextTestNumber++;
+        }
+      }
       
       const newTestId = crypto.randomUUID();
+      console.log("Generated test ID:", newTestId);
+      console.log("Selected batch ID:", selectedBatch.id);
+      console.log("Next test number:", nextTestNumber);
 
-      const { data, error } = await supabase.from("tests").insert({
+      const insertData = {
         id: newTestId,
         batch_id: selectedBatch.id,
         name: testForm.name,
         test_number: nextTestNumber,
         time_duration: parseInt(testForm.time_duration),
         question_count: 0,
-      }).select();
+      };
+      console.log("Insert data:", insertData);
+
+      const { data, error } = await supabase.from("tests").insert(insertData).select();
 
       if (error) {
         console.error("Error creating test:", error);

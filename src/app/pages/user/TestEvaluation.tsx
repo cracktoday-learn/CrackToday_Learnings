@@ -72,7 +72,7 @@ export function TestEvaluation() {
       if (user) {
         const { data: userAttemptData } = await supabase
           .from("test_attempts")
-          .select("*,users(email,user_metadata)")
+          .select("*")
           .eq("batch_id", batchId)
           .eq("test_number", parseInt(testNumber))
           .eq("user_id", user.id)
@@ -83,10 +83,11 @@ export function TestEvaluation() {
       // Fetch all attempts for ranking
       const { data: attemptsData } = await supabase
         .from("test_attempts")
-        .select("*,users(email,user_metadata)")
+        .select("*")
         .eq("batch_id", batchId)
         .eq("test_number", parseInt(testNumber))
-        .order("score desc, time_taken asc");
+        .order("score", { ascending: false })
+        .order("time_taken", { ascending: true });
 
       if (attemptsData) {
         setAllAttempts(attemptsData);
@@ -201,15 +202,15 @@ export function TestEvaluation() {
           
           <div className="space-y-3">
             {allAttempts.slice(0, 10).map((attempt, index) => (
-              <div key={attempt.id} className={`flex items-center justify-between p-4 rounded-xl border ${attempt.user_id === userAttempt.user_id ? "bg-indigo-50 border-indigo-200" : "bg-slate-50 border-slate-200"}`}>
+              <div key={attempt.id} className={`flex items-center justify-between p-4 rounded-xl border ${attempt.user_id === userAttempt?.user_id ? "bg-indigo-50 border-indigo-200" : "bg-slate-50 border-slate-200"}`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getRankColor(index + 1)}`}>
                     {getRankIcon(index + 1)}
                   </div>
                   <div>
                     <p className="font-semibold text-slate-900">
-                      {attempt.users.user_metadata?.name || attempt.users.email?.split("@")[0]}
-                      {attempt.user_id === userAttempt.user_id && <span className="ml-2 text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">You</span>}
+                      User {attempt.user_id?.slice(0, 8)}
+                      {attempt.user_id === userAttempt?.user_id && <span className="ml-2 text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">You</span>}
                     </p>
                     <p className="text-sm text-slate-500">{Math.round((attempt.score / attempt.total_marks) * 100)}% • {formatTime(attempt.time_taken)}</p>
                   </div>
