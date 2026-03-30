@@ -70,24 +70,31 @@ export function TestEvaluation() {
       // Fetch current user's attempt
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: userAttemptData } = await supabase
+        const { data: userAttemptData, error: userAttemptError } = await supabase
           .from("test_attempts")
           .select("*")
           .eq("batch_id", batchId)
           .eq("test_number", parseInt(testNumber))
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
+        if (userAttemptError) {
+          console.error("User attempt fetch error:", userAttemptError);
+        }
         setUserAttempt(userAttemptData);
       }
 
       // Fetch all attempts for ranking
-      const { data: attemptsData } = await supabase
+      const { data: attemptsData, error: attemptsError } = await supabase
         .from("test_attempts")
         .select("*")
         .eq("batch_id", batchId)
         .eq("test_number", parseInt(testNumber))
         .order("score", { ascending: false })
         .order("time_taken", { ascending: true });
+      
+      if (attemptsError) {
+        console.error("All attempts fetch error:", attemptsError);
+      }
 
       if (attemptsData) {
         setAllAttempts(attemptsData);

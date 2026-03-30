@@ -13,13 +13,23 @@ export const AdminLink = () => {
   }, [user]);
 
   const checkAdmin = async () => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user?.id)
-      .eq("role", "admin")
-      .single();
-    setIsAdmin(!!data);
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user?.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (error) {
+        console.error("Admin check error:", error);
+        setIsAdmin(false);
+        return;
+      }
+      setIsAdmin(!!data);
+    } catch (err) {
+      console.error("Admin check exception:", err);
+      setIsAdmin(false);
+    }
   };
 
   if (!isAdmin) return null;
