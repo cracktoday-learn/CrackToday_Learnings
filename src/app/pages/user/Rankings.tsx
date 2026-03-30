@@ -3,6 +3,7 @@ import { Trophy, Medal, Award, TrendingUp, Users, Clock, Target } from "lucide-r
 import { Link } from "react-router-dom";
 import { supabase } from "../../../utils/supabase/client";
 import { useAuth } from "../../components/AuthProvider";
+import { toast } from "sonner";
 
 // DUMMY DATA - Replace with real data from Supabase when you have users
 const DUMMY_RANKINGS = [
@@ -61,11 +62,11 @@ export function Rankings() {
     }
   };
 
-  // TODO: Uncomment this useEffect when you want to switch to real data
-  /*
   useEffect(() => {
     if (useRealData) {
       fetchRealRankings();
+    } else {
+      setRankings(DUMMY_RANKINGS);
     }
   }, [useRealData, timeFilter]);
 
@@ -74,7 +75,7 @@ export function Rankings() {
     try {
       const { data, error } = await supabase
         .from("test_attempts")
-        .select("*, profiles(name, email)")
+        .select("*")
         .order("score", { ascending: false })
         .limit(100);
       
@@ -84,23 +85,25 @@ export function Rankings() {
       const processed = data?.map((attempt, index) => ({
         id: attempt.user_id,
         rank: index + 1,
-        name: attempt.profiles?.name || attempt.profiles?.email?.split("@")[0] || `User ${attempt.user_id.slice(0, 8)}`,
+        name: `User ${attempt.user_id?.slice(0, 8)}`,
         score: attempt.score,
-        totalMarks: attempt.total_marks,
-        accuracy: Math.round((attempt.score / attempt.total_marks) * 100),
-        timeTaken: attempt.time_taken,
+        totalMarks: attempt.total_marks || 100,
+        accuracy: Math.round((attempt.score / (attempt.total_marks || 100)) * 100),
+        timeTaken: attempt.time_taken || 1800,
         testsCompleted: 1,
-        avatar: (attempt.profiles?.name || "U").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
+        avatar: `U${index + 1}`,
+        date: attempt.created_at,
       })) || [];
       
       setRankings(processed);
     } catch (err) {
       console.error("Failed to fetch rankings:", err);
+      toast.error("Failed to load real data");
+      setRankings(DUMMY_RANKINGS);
     } finally {
       setLoading(false);
     }
   };
-  */
 
   // Filter rankings based on time filter
   const filteredRankings = (() => {
