@@ -46,9 +46,10 @@ export function TestEvaluation() {
   const [batch, setBatch] = useState<Batch | null>(null);
   const [test, setTest] = useState<Test | null>(null);
   const [userAttempt, setUserAttempt] = useState<TestAttempt | null>(null);
-  const [allAttempts, setAllAttempts] = useState<TestAttempt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allAttempts, setAllAttempts] = useState<any[]>([]);
+  const [userNames, setUserNames] = useState<{[key: string]: string}>({});
   const [userRank, setUserRank] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
@@ -101,6 +102,28 @@ export function TestEvaluation() {
         setAllAttempts(attemptsData);
         const rank = attemptsData.findIndex(attempt => attempt.user_id === user?.id) + 1;
         setUserRank(rank);
+        
+        // Fetch user names for all attempts
+        const uniqueUserIds = [...new Set(attemptsData.map(a => a.user_id))];
+        const namesMap: {[key: string]: string} = {};
+        
+        for (const userId of uniqueUserIds) {
+          try {
+            const { data: userData } = await supabase
+              .from("profiles")
+              .select("name, email")
+              .eq("id", userId)
+              .maybeSingle();
+            if (userData) {
+              namesMap[userId] = userData.name || userData.email?.split("@")[0] || `User ${userId.slice(0, 8)}`;
+            } else {
+              namesMap[userId] = `User ${userId.slice(0, 8)}`;
+            }
+          } catch {
+            namesMap[userId] = `User ${userId.slice(0, 8)}`;
+          }
+        }
+        setUserNames(namesMap);
       }
     } catch (err) {
       toast.error("Failed to load evaluation data");
@@ -217,7 +240,7 @@ export function TestEvaluation() {
                   </div>
                   <div>
                     <p className="font-semibold text-slate-900">
-                      User {attempt.user_id?.slice(0, 8)}
+                      {userNames[attempt.user_id] || `User ${attempt.user_id?.slice(0, 8)}`}
                       {attempt.user_id === userAttempt?.user_id && <span className="ml-2 text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">You</span>}
                     </p>
                     <p className="text-sm text-slate-500">{Math.round((attempt.score / attempt.total_marks) * 100)}% • {formatTime(attempt.time_taken)}</p>

@@ -11,6 +11,7 @@ import { TestEvaluation } from "./pages/user/TestEvaluation";
 import { Checkout } from "./pages/user/Checkout";
 import { SubscriptionCheckout } from "./pages/user/SubscriptionCheckout";
 import { Leaderboard } from "./pages/user/Leaderboard";
+import { Rankings } from "./pages/user/Rankings";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
@@ -61,7 +62,8 @@ export const router = createBrowserRouter([
         path: "checkout/subscription/:planId",
         element: (<ProtectedRoute><SubscriptionCheckout /></ProtectedRoute>),
       },
-      { path: "exams", Component: Exams },
+      { path: "leaderboard", Component: Leaderboard },
+      { path: "rankings", Component: Rankings },
       { path: "pricing", Component: Pricing },
       { path: "*", Component: Home },
     ],
