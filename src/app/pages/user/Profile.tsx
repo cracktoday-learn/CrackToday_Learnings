@@ -191,6 +191,26 @@ export function Profile() {
           </div>
 
         </div>
+
+        {/* Save Changes Button - Only show when editing */}
+        {editingName && (
+          <div className="mt-6 pt-4 border-t border-slate-200 flex justify-end gap-3">
+            <button
+              onClick={() => { setEditingName(false); setName(user?.user_metadata?.name || ""); }}
+              className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveName}
+              disabled={savingName}
+              className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+              {savingName ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Change Password */}

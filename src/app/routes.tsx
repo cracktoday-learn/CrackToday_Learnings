@@ -32,6 +32,10 @@ export const router = createBrowserRouter([
         path: "dashboard",
         element: (<ProtectedRoute><UserDashboard /></ProtectedRoute>),
       },
+      {
+        path: "profile",
+        element: (<ProtectedRoute><Profile /></ProtectedRoute>),
+      },
       { path: "tests", Component: Exams },
       {
         path: "tests/:batchId/manage",

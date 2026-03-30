@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { BookOpen, UserCircle, LogOut, Settings } from "lucide-react";
+import { BookOpen, User, UserCircle, LogOut, Settings } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
 import { AdminLink } from "../components/AdminLink";
 import { supabase } from "../../utils/supabase/client";
@@ -39,9 +39,12 @@ export function MainLayout() {
               {user ? (
                 <>
                   <AdminLink />
-                  <Link to="/dashboard" className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <UserCircle className="h-4 w-4" />
-                    Dashboard
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors"
+                  >
+                    <User className="h-4 w-4" />
+                    Profile
                   </Link>
                   <button onClick={handleLogout} className="flex items-center gap-2 text-slate-600 hover:text-red-600 transition-colors text-sm font-medium">
                     <LogOut className="h-4 w-4" />
