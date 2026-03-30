@@ -76,6 +76,7 @@ export function TestEvaluation() {
           .eq("batch_id", batchId)
           .eq("test_number", parseInt(testNumber))
           .eq("user_id", user.id)
+          .limit(1)
           .maybeSingle();
         if (userAttemptError) {
           console.error("User attempt fetch error:", userAttemptError);
