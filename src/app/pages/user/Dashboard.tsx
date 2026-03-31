@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, Newspaper, ArrowRight, History, Target } from "lucide-react";
+import { PlayCircle, Trophy, CheckCircle, FileText, ShoppingBag, Newspaper, ArrowRight, History, Target, Award } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -26,6 +26,7 @@ export function UserDashboard() {
   const [availableBatches, setAvailableBatches] = useState<Batch[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [completedTests, setCompletedTests] = useState<number>(0);
+  const [overallRank, setOverallRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
@@ -41,11 +42,43 @@ export function UserDashboard() {
       // Fetch completed tests count
       const { data: attemptsData, error: attemptsError } = await supabase
         .from("test_attempts")
-        .select("id")
+        .select("id, user_id, score, total_marks")
         .eq("user_id", user?.id);
       
       if (!attemptsError && attemptsData) {
         setCompletedTests(attemptsData.length);
+      }
+
+      // Calculate overall rank
+      const { data: allAttempts, error: allAttemptsError } = await supabase
+        .from("test_attempts")
+        .select("user_id, score, total_marks");
+      
+      if (!allAttemptsError && allAttempts) {
+        // Calculate total score for each user
+        const userScores: Record<string, { totalScore: number; totalMarks: number; count: number }> = {};
+        allAttempts.forEach((attempt: any) => {
+          const uid = attempt.user_id;
+          if (!userScores[uid]) {
+            userScores[uid] = { totalScore: 0, totalMarks: 0, count: 0 };
+          }
+          userScores[uid].totalScore += attempt.score || 0;
+          userScores[uid].totalMarks += attempt.total_marks || 100;
+          userScores[uid].count += 1;
+        });
+
+        // Calculate average accuracy for each user and sort
+        const rankedUsers = Object.entries(userScores)
+          .map(([uid, data]) => ({
+            userId: uid,
+            accuracy: data.totalMarks > 0 ? (data.totalScore / data.totalMarks) * 100 : 0,
+            count: data.count
+          }))
+          .sort((a, b) => b.accuracy - a.accuracy);
+
+        // Find current user's rank
+        const userRankIndex = rankedUsers.findIndex(u => u.userId === user?.id);
+        setOverallRank(userRankIndex >= 0 ? userRankIndex + 1 : null);
       }
     } catch (err) {
       toast.error("Failed to load data");
@@ -93,14 +126,14 @@ export function UserDashboard() {
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600"><Trophy className="h-6 w-6" /></div>
-            <div><p className="text-sm font-medium text-slate-500">Tests Available</p><h3 className="text-2xl font-bold text-slate-900">{purchases.reduce((acc, p) => acc + (p.batches?.total_tests || 0), 0)}</h3></div>
+            <div className="h-12 w-12 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600"><Award className="h-6 w-6" /></div>
+            <div><p className="text-sm font-medium text-slate-500">Overall Rank</p><h3 className="text-2xl font-bold text-slate-900">{overallRank ? `#${overallRank}` : "-"}</h3></div>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600"><TrendingUp className="h-6 w-6" /></div>
-            <div><p className="text-sm font-medium text-slate-500">Logged in as</p><h3 className="text-sm font-bold text-slate-900 truncate">{user?.email}</h3></div>
+            <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600"><Trophy className="h-6 w-6" /></div>
+            <div><p className="text-sm font-medium text-slate-500">Tests Available</p><h3 className="text-2xl font-bold text-slate-900">{purchases.reduce((acc, p) => acc + (p.batches?.total_tests || 0), 0)}</h3></div>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
