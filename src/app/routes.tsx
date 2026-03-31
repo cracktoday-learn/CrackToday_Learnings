@@ -38,6 +38,7 @@ export const router = createBrowserRouter([
         element: (<ProtectedRoute><Profile /></ProtectedRoute>),
       },
       { path: "tests", Component: Exams },
+      { path: "exams", Component: Exams },
       {
         path: "tests/:batchId/manage",
         element: (<AdminRoute><TestManagement /></AdminRoute>),
