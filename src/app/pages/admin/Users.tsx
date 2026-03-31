@@ -25,7 +25,7 @@ export function AdminUsers() {
       // Fetch all users from auth (via profiles or auth.users)
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, email, created_at, user_metadata");
+        .select("id, email, name, created_at");
 
       if (profilesError) throw profilesError;
 
@@ -48,8 +48,8 @@ export function AdminUsers() {
         const userPurchases = purchasesByUser[profile.id] || [];
         return {
           user_id: profile.id,
-          email: profile.email || profile.user_metadata?.email,
-          name: profile.user_metadata?.name || "User",
+          email: profile.email,
+          name: profile.name || "User",
           created_at: profile.created_at,
           batches: userPurchases.map((p: any) => p.batches?.name).filter(Boolean),
           purchased_at: userPurchases[0]?.purchased_at || profile.created_at,
