@@ -22,23 +22,41 @@ export function AdminUsers() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch all users from auth (via profiles or auth.users)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, email, created_at, user_metadata");
+
+      if (profilesError) throw profilesError;
+
+      // Fetch purchases to show enrolled batches
+      const { data: purchasesData } = await supabase
         .from("purchases")
-        .select("user_id, purchased_at, batches(name)")
-        .order("purchased_at", { ascending: false });
+        .select("user_id, purchased_at, batches(name)");
 
-      if (error) throw error;
-
-      // Group by user_id to count purchases
-      const userMap: any = {};
-      (data || []).forEach((row: any) => {
-        if (!userMap[row.user_id]) {
-          userMap[row.user_id] = { user_id: row.user_id, purchased_at: row.purchased_at, batches: [] };
+      // Group purchases by user
+      const purchasesByUser: Record<string, any[]> = {};
+      (purchasesData || []).forEach((row: any) => {
+        if (!purchasesByUser[row.user_id]) {
+          purchasesByUser[row.user_id] = [];
         }
-        userMap[row.user_id].batches.push(row.batches?.name);
+        purchasesByUser[row.user_id].push(row);
       });
 
-      setUsers(Object.values(userMap));
+      // Combine profiles with purchase data
+      const usersWithPurchases = (profilesData || []).map((profile: any) => {
+        const userPurchases = purchasesByUser[profile.id] || [];
+        return {
+          user_id: profile.id,
+          email: profile.email || profile.user_metadata?.email,
+          name: profile.user_metadata?.name || "User",
+          created_at: profile.created_at,
+          batches: userPurchases.map((p: any) => p.batches?.name).filter(Boolean),
+          purchased_at: userPurchases[0]?.purchased_at || profile.created_at,
+        };
+      });
+
+      setUsers(usersWithPurchases);
     } catch (err) {
       toast.error("Failed to load users");
     } finally {
@@ -81,7 +99,7 @@ export function AdminUsers() {
         ) : users.length === 0 ? (
           <div className="text-center py-16 text-slate-500">
             <Shield className="h-10 w-10 mx-auto mb-3 text-slate-300" />
-            <p>No users have made purchases yet.</p>
+            <p>No users registered yet.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -96,31 +114,31 @@ export function AdminUsers() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {users
-                  .filter((u) => u.user_id.toLowerCase().includes(search.toLowerCase()))
+                  .filter((u) => (u.email || u.user_id).toLowerCase().includes(search.toLowerCase()))
                   .map((user) => (
                     <tr key={user.user_id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm border border-indigo-200">
-                            {user.user_id.charAt(0).toUpperCase()}
+                            {(user.name || user.email || "U").charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="text-sm font-semibold text-slate-900">User</div>
+                            <div className="text-sm font-semibold text-slate-900">{user.name || "User"}</div>
                             <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                              <Mail className="h-3 w-3" /> {user.user_id.slice(0, 16)}...
+                              <Mail className="h-3 w-3" /> {(user.email || user.user_id).slice(0, 20)}...
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-slate-700">
-                        {user.batches.length} {user.batches.length === 1 ? "batch" : "batches"}
+                        {user.batches.length > 0 ? `${user.batches.length} ${user.batches.length === 1 ? "batch" : "batches"}` : "-"}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-500">
-                        {new Date(user.purchased_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        {new Date(user.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
-                          <CheckCircle className="h-3 w-3" /> Active
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${user.batches.length > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                          <CheckCircle className="h-3 w-3" /> {user.batches.length > 0 ? "Active" : "Registered"}
                         </span>
                       </td>
                     </tr>
