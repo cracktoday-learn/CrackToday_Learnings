@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Bell, Mail, Database, Save } from "lucide-react";
+import { Settings, Mail, Save } from "lucide-react";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
 
@@ -8,7 +8,6 @@ export function AdminSettings() {
   const [settings, setSettings] = useState({
     siteName: "CrackToday",
     contactEmail: "",
-    enableNotifications: true,
   });
 
   useEffect(() => {
@@ -27,7 +26,6 @@ export function AdminSettings() {
         setSettings({
           siteName: data.site_name || "CrackToday",
           contactEmail: data.contact_email || "",
-          enableNotifications: data.enable_notifications ?? true,
         });
       }
     } catch {
@@ -44,7 +42,6 @@ export function AdminSettings() {
           id: 1,
           site_name: settings.siteName,
           contact_email: settings.contactEmail,
-          enable_notifications: settings.enableNotifications,
           updated_at: new Date().toISOString(),
         });
 
@@ -76,7 +73,7 @@ export function AdminSettings() {
       </div>
 
       {/* Settings Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="max-w-2xl">
         {/* General Settings */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex items-center gap-3 mb-6">
@@ -113,52 +110,6 @@ export function AdminSettings() {
                   className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Notifications */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-10 w-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <Bell className="h-5 w-5 text-emerald-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-slate-900">Notifications</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-slate-900">Enable Notifications</p>
-                <p className="text-sm text-slate-500">Send email notifications to users</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.enableNotifications}
-                  onChange={(e) => setSettings({ ...settings, enableNotifications: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Database */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Database className="h-5 w-5 text-purple-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-slate-900">Database</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <p className="text-sm text-slate-600">
-                Database connection is managed through Supabase. No additional configuration needed.
-              </p>
             </div>
           </div>
         </div>
