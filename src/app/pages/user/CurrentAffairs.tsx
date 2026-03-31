@@ -84,18 +84,15 @@ const DUMMY_AFFAIRS: CurrentAffair[] = [
 ];
 
 export function CurrentAffairs() {
-  const [affairs, setAffairs] = useState<CurrentAffair[]>(DUMMY_AFFAIRS);
-  const [loading, setLoading] = useState(false);
+  const [affairs, setAffairs] = useState<CurrentAffair[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [useRealData, setUseRealData] = useState(false);
 
   useEffect(() => {
-    if (useRealData) {
-      fetchRealAffairs();
-    }
-  }, [useRealData]);
+    fetchAffairs();
+  }, []);
 
-  const fetchRealAffairs = async () => {
+  const fetchAffairs = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -169,16 +166,6 @@ export function CurrentAffairs() {
               {cat.name}
             </button>
           ))}
-        </div>
-
-        {/* Data Toggle */}
-        <div className="mb-6 text-right">
-          <button
-            onClick={() => setUseRealData(!useRealData)}
-            className="text-sm text-slate-500 hover:text-indigo-600 underline"
-          >
-            {useRealData ? "Using Real Data" : "Using Demo Data (Click to switch)"}
-          </button>
         </div>
 
         {/* Content */}
