@@ -150,12 +150,7 @@ export function CurrentAffairs() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-indigo-600 rounded-lg">
-              <Newspaper className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-slate-900">Current Affairs</h1>
-          </div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Current Affairs</h1>
           <p className="text-slate-600">Stay updated with the latest news and events</p>
         </div>
 

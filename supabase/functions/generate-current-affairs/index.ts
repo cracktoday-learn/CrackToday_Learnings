@@ -122,13 +122,11 @@ async function generateCurrentAffairs(): Promise<CurrentAffair[]> {
     - Names of schemes, policies, or key people involved
     - Specific dates, numbers, or statistics
     - Why this news is important for exams
-    - Any related previous year questions or exam relevance
     
     Format your response as a JSON object with these exact fields:
     {
       "title": "A compelling news headline with specific keywords (max 80 characters)",
-      "summary": "3-4 sentence summary including key facts, figures, and exam importance (max 250 characters)",
-      "source_url": "https://pib.gov.in or relevant government website"
+      "summary": "3-4 sentence summary including key facts, figures, and exam importance (max 250 characters)"
     }
     
     Make it factually accurate and exam-relevant. Only return the JSON, no other text.`;
@@ -186,7 +184,7 @@ async function generateCurrentAffairs(): Promise<CurrentAffair[]> {
               summary: parsed.summary,
               category: category,
               date: currentDate,
-              source_url: parsed.source_url || "https://www.google.com/search",
+              source_url: `https://www.google.com/search?q=${encodeURIComponent(parsed.title)}`,
             });
             console.log(`Successfully added affair: ${parsed.title}`);
           }
