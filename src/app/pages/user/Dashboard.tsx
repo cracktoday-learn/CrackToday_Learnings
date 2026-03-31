@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, LogOut, UserCircle, Newspaper, ArrowRight, History } from "lucide-react";
+import { Link } from "react-router-dom";
+import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, Newspaper, ArrowRight, History } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -23,7 +23,6 @@ interface Purchase {
 
 export function UserDashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [availableBatches, setAvailableBatches] = useState<Batch[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,12 +43,6 @@ export function UserDashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logged out successfully");
-    navigate("/");
-  };
-
   const purchasedBatchIds = purchases.map((p) => p.batch_id);
 
   if (loading) {
@@ -64,20 +57,12 @@ export function UserDashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Header */}
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
             Welcome back, {user?.user_metadata?.name || user?.email?.split("@")[0]}! 👋
           </h1>
           <p className="text-slate-500">Here's your preparation overview.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/profile" className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
-            <UserCircle className="h-4 w-4" /> Profile
-          </Link>
-          <button onClick={handleLogout} className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
-            <LogOut className="h-4 w-4" /> Logout
-          </button>
         </div>
       </div>
 

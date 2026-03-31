@@ -1,10 +1,23 @@
-import { Link, Outlet } from "react-router-dom";
-import { BookOpen } from "lucide-react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import { BookOpen, User, LogOut } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
 import { AdminLink } from "../components/AdminLink";
+import { supabase } from "../../utils/supabase/client";
+import { toast } from "sonner";
 
 export function MainLayout() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Logged out successfully");
+      navigate("/");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -28,6 +41,17 @@ export function MainLayout() {
               {user ? (
                 <>
                   <AdminLink />
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors"
+                  >
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  <button onClick={handleLogout} className="flex items-center gap-2 text-slate-600 hover:text-red-600 transition-colors text-sm font-medium">
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
                 </>
               ) : (
                 <>
