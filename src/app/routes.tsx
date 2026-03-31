@@ -13,12 +13,14 @@ import { SubscriptionCheckout } from "./pages/user/SubscriptionCheckout";
 import { Leaderboard } from "./pages/user/Leaderboard";
 import { Rankings } from "./pages/user/Rankings";
 import { CurrentAffairs } from "./pages/user/CurrentAffairs";
+import { PreviousYearPapers } from "./pages/user/PreviousYearPapers";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
 import { TestManagement } from "./pages/admin/TestManagement";
 import { AdminQuestions } from "./pages/admin/Questions";
 import { AdminCoupons } from "./pages/admin/Coupons";
+import { AdminPreviousYearPapers } from "./pages/admin/PreviousYearPapers";
 import { Login } from "./pages/auth/Login";
 import { Signup } from "./pages/auth/Signup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -57,6 +59,10 @@ export const router = createBrowserRouter([
         element: (<ProtectedRoute><TestEvaluation /></ProtectedRoute>),
       },
       {
+        path: "batch/:batchId/previous-year-papers",
+        element: (<ProtectedRoute><PreviousYearPapers /></ProtectedRoute>),
+      },
+      {
         path: "checkout/:batchId",
         element: (<ProtectedRoute><Checkout /></ProtectedRoute>),
       },
@@ -83,6 +89,7 @@ export const router = createBrowserRouter([
       { path: "tests/:batchId/manage", Component: TestManagement },
       { path: "tests/:batchId/questions", Component: AdminQuestions },
       { path: "coupons", Component: AdminCoupons },
+      { path: "previous-year-papers", Component: AdminPreviousYearPapers },
     ],
   },
 ]);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, LogOut, UserCircle, Newspaper, ArrowRight } from "lucide-react";
+import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, LogOut, UserCircle, Newspaper, ArrowRight, History } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -151,12 +151,20 @@ export function UserDashboard() {
                     <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Active</span>
                   </div>
                   <p className="text-sm text-slate-600 mb-4">{purchase.batches?.description}</p>
-                  <Link
-                    to={`/test/${purchase.batch_id}`}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <PlayCircle className="h-4 w-4" /> Start Test
-                  </Link>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link
+                      to={`/test/${purchase.batch_id}`}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <PlayCircle className="h-4 w-4" /> Start Test
+                    </Link>
+                    <Link
+                      to={`/batch/${purchase.batch_id}/previous-year-papers`}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <History className="h-4 w-4" /> PYQ Papers
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

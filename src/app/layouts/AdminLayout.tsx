@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Bell, Search, BookOpen, Tag } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Settings, LogOut, Bell, Search, BookOpen, Tag, History } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "../components/AuthProvider";
@@ -29,6 +29,7 @@ export function AdminLayout() {
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { label: "Manage Users", href: "/admin/users", icon: Users },
     { label: "Test Batches", href: "/admin/tests", icon: FileText },
+    { label: "Previous Year Papers", href: "/admin/previous-year-papers", icon: History },
     { label: "Coupons", href: "/admin/coupons", icon: Tag },
     { label: "Settings", href: "/admin/settings", icon: Settings },
   ];
