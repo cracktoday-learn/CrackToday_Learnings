@@ -37,6 +37,7 @@ export function Rankings() {
   const [rankings, setRankings] = useState<RankingUser[]>(DUMMY_RANKINGS);
   const [useRealData, setUseRealData] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState("all");
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -96,10 +97,10 @@ export function Rankings() {
       })) || [];
       
       setRankings(processed);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch rankings:", err);
       toast.error("Failed to load real data");
-      setError(err.message);
+      setError(err?.message || "Unknown error");
     } finally {
       setLoading(false);
     }
