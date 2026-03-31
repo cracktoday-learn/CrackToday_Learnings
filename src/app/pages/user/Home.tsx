@@ -73,7 +73,7 @@ export function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {popularExams.map((exam) => (
-              <div key={exam.title} className="group relative bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+              <Link key={exam.title} to="/exams" className="group relative bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer block">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${exam.color}`}>
                   <BookOpen className="h-6 w-6" />
                 </div>
@@ -82,7 +82,7 @@ export function Home() {
                 <div className="flex items-center text-indigo-600 font-medium text-sm group-hover:gap-2 transition-all">
                   View Batches <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-1 transition-all" />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
