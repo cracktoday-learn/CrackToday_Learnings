@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, Medal, Award, TrendingUp, Users, Clock, Target } from "lucide-react";
+import { Trophy, Medal, Award, TrendingUp, Users, Clock, Target, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../../utils/supabase/client";
 import { useAuth } from "../../components/AuthProvider";
@@ -31,6 +31,13 @@ interface RankingUser {
   avatar: string;
   avatarUrl?: string | null;
   date?: string;
+  testId?: string;
+  batchId?: string;
+}
+
+interface Batch {
+  id: string;
+  name: string;
 }
 
 export function Rankings() {
@@ -41,9 +48,12 @@ export function Rankings() {
   const [error, setError] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState("all");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [selectedBatch, setSelectedBatch] = useState<string>("all");
 
   useEffect(() => {
     checkAdmin();
+    fetchBatches();
   }, [user]);
 
   const checkAdmin = async () => {
@@ -61,6 +71,20 @@ export function Rankings() {
       setIsAdmin(!!data && !error);
     } catch {
       setIsAdmin(false);
+    }
+  };
+
+  const fetchBatches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("batches")
+        .select("id, name")
+        .order("name", { ascending: true });
+      
+      if (error) throw error;
+      setBatches(data || []);
+    } catch (err) {
+      console.error("Failed to fetch batches:", err);
     }
   };
 
@@ -124,23 +148,33 @@ export function Rankings() {
     }
   };
 
-  // Filter rankings based on time filter
+  // Filter rankings based on time filter and batch filter
   const filteredRankings = (() => {
-    if (timeFilter === "all") return rankings;
+    let filtered = rankings;
     
-    const now = new Date();
-    const cutoffDate = new Date();
-    
-    if (timeFilter === "weekly") {
-      cutoffDate.setDate(now.getDate() - 7);
-    } else if (timeFilter === "monthly") {
-      cutoffDate.setDate(now.getDate() - 30);
+    // Apply time filter
+    if (timeFilter !== "all") {
+      const now = new Date();
+      const cutoffDate = new Date();
+      
+      if (timeFilter === "weekly") {
+        cutoffDate.setDate(now.getDate() - 7);
+      } else if (timeFilter === "monthly") {
+        cutoffDate.setDate(now.getDate() - 30);
+      }
+      
+      filtered = filtered.filter(user => {
+        if (!user.date) return true;
+        return new Date(user.date) >= cutoffDate;
+      });
     }
     
-    return rankings.filter(user => {
-      if (!user.date) return true;
-      return new Date(user.date) >= cutoffDate;
-    });
+    // Apply batch filter
+    if (selectedBatch !== "all") {
+      filtered = filtered.filter(user => user.batchId === selectedBatch || user.testId === selectedBatch);
+    }
+    
+    return filtered;
   })();
 
   const formatTime = (seconds: number) => {
@@ -248,6 +282,25 @@ export function Rankings() {
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </button>
             ))}
+          </div>
+          
+          {/* Batch Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <select
+                value={selectedBatch}
+                onChange={(e) => setSelectedBatch(e.target.value)}
+                className="appearance-none bg-white border border-slate-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-slate-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent cursor-pointer"
+              >
+                <option value="all">All Batches</option>
+                {batches.map((batch) => (
+                  <option key={batch.id} value={batch.id}>
+                    {batch.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            </div>
           </div>
           
           {/* Toggle for real vs dummy data - Only visible to admins */}
