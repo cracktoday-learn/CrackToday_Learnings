@@ -114,32 +114,47 @@ export function UserDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600"><ShoppingBag className="h-6 w-6" /></div>
-            <div><p className="text-sm font-medium text-slate-500">Purchased Batches</p><h3 className="text-2xl font-bold text-slate-900">{purchases.length}</h3></div>
+            <div className="h-12 w-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0"><ShoppingBag className="h-6 w-6" /></div>
+            <div className="flex flex-col justify-center min-w-0">
+              <p className="text-sm font-medium text-slate-500 truncate">Purchased Batches</p>
+              <h3 className="text-2xl font-bold text-slate-900 leading-tight">{purchases.length}</h3>
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><Target className="h-6 w-6" /></div>
-            <div><p className="text-sm font-medium text-slate-500">Tests Completed</p><h3 className="text-2xl font-bold text-slate-900">{completedTests}</h3></div>
+            <div className="h-12 w-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0"><Target className="h-6 w-6" /></div>
+            <div className="flex flex-col justify-center min-w-0">
+              <p className="text-sm font-medium text-slate-500 truncate">Tests Completed</p>
+              <h3 className="text-2xl font-bold text-slate-900 leading-tight">{completedTests}</h3>
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600"><Award className="h-6 w-6" /></div>
-            <div><p className="text-sm font-medium text-slate-500">Overall Rank</p><h3 className="text-2xl font-bold text-slate-900">{overallRank ? `#${overallRank}` : "-"}</h3></div>
+            <div className="h-12 w-12 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600 flex-shrink-0"><Award className="h-6 w-6" /></div>
+            <div className="flex flex-col justify-center min-w-0">
+              <p className="text-sm font-medium text-slate-500 truncate">Overall Rank</p>
+              <h3 className="text-2xl font-bold text-slate-900 leading-tight">{overallRank ? `#${overallRank}` : "-"}</h3>
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600"><Trophy className="h-6 w-6" /></div>
-            <div><p className="text-sm font-medium text-slate-500">Tests Available</p><h3 className="text-2xl font-bold text-slate-900">{purchases.reduce((acc, p) => acc + (p.batches?.total_tests || 0), 0)}</h3></div>
+            <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0"><Trophy className="h-6 w-6" /></div>
+            <div className="flex flex-col justify-center min-w-0">
+              <p className="text-sm font-medium text-slate-500 truncate">Tests Available</p>
+              <h3 className="text-2xl font-bold text-slate-900 leading-tight">{purchases.reduce((acc, p) => acc + (p.batches?.total_tests || 0), 0)}</h3>
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600"><CheckCircle className="h-6 w-6" /></div>
-            <div><p className="text-sm font-medium text-slate-500">Available Batches</p><h3 className="text-2xl font-bold text-slate-900">{availableBatches.length}</h3></div>
+            <div className="h-12 w-12 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 flex-shrink-0"><CheckCircle className="h-6 w-6" /></div>
+            <div className="flex flex-col justify-center min-w-0">
+              <p className="text-sm font-medium text-slate-500 truncate">Available Batches</p>
+              <h3 className="text-2xl font-bold text-slate-900 leading-tight">{availableBatches.length}</h3>
+            </div>
           </div>
         </div>
       </div>
