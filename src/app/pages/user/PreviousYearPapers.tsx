@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { FileText, Lock, ShoppingBag, Calendar, ExternalLink, ArrowLeft, BookOpen, Eye, Download, Loader2 } from "lucide-react";
+import { FileText, Lock, ShoppingBag, Calendar, ExternalLink, ArrowLeft, BookOpen, Eye, Download, Loader2, Shield, AlertTriangle } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +27,167 @@ interface PreviousYearPaper {
   created_at: string;
 }
 
+// Secure PDF Viewer Component with screenshot protection
+function SecurePDFViewer({ paper, userEmail, onClose }: { paper: PreviousYearPaper; userEmail: string; onClose: () => void }) {
+  const [isBlurred, setIsBlurred] = useState(false);
+  const [warningShown, setWarningShown] = useState(false);
+
+  useEffect(() => {
+    // Prevent right-click
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      toast.error("Right-click is disabled for security reasons");
+    };
+
+    // Prevent keyboard shortcuts for screenshots
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Block Print Screen key
+      if (e.key === "PrintScreen") {
+        e.preventDefault();
+        setIsBlurred(true);
+        setWarningShown(true);
+        toast.error("Screenshots are not allowed!");
+        setTimeout(() => setIsBlurred(false), 3000);
+      }
+
+      // Block Ctrl+P (print)
+      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+        e.preventDefault();
+        toast.error("Printing is disabled for security reasons");
+      }
+
+      // Block Ctrl+S (save)
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        toast.error("Saving is disabled. Use the download button instead");
+      }
+
+      // Block Ctrl+Shift+S (save as)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "s") {
+        e.preventDefault();
+        toast.error("Saving is disabled for security reasons");
+      }
+    };
+
+    // Blur when window loses focus (possible screenshot attempt)
+    const handleBlur = () => {
+      setIsBlurred(true);
+    };
+
+    const handleFocus = () => {
+      setIsBlurred(false);
+      setWarningShown(false);
+    };
+
+    // Prevent drag and drop
+    const handleDragStart = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("dragstart", handleDragStart);
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("dragstart", handleDragStart);
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-50 flex flex-col">
+      {/* Security Header */}
+      <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Shield className="h-5 w-5 text-emerald-400" />
+          <span className="font-medium">Secure View - {paper.title}</span>
+          <span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">
+            Licensed to: {userEmail}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-400">Screenshot protection active</span>
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+      {/* Warning Banner */}
+      {warningShown && (
+        <div className="bg-red-600 text-white px-4 py-2 flex items-center justify-center gap-2 animate-pulse">
+          <AlertTriangle className="h-4 w-4" />
+          <span className="text-sm font-medium">Screenshot detected! Content blurred for security.</span>
+        </div>
+      )}
+
+      {/* PDF Viewer with protection */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Blur overlay */}
+        {isBlurred && (
+          <div className="absolute inset-0 bg-slate-900/90 z-10 flex items-center justify-center">
+            <div className="text-center text-white">
+              <Shield className="h-16 w-16 mx-auto mb-4 text-emerald-400" />
+              <h3 className="text-xl font-bold mb-2">Content Protected</h3>
+              <p className="text-slate-300">Screenshots and screen recording are not allowed.</p>
+              <p className="text-sm text-slate-400 mt-2">Click anywhere to resume viewing</p>
+            </div>
+          </div>
+        )}
+
+        {/* Floating watermark overlay */}
+        <div className="absolute inset-0 pointer-events-none z-5 overflow-hidden">
+          <div className="absolute top-20 right-8 text-slate-400/30 text-xl font-bold rotate-12 select-none">
+            cracktoday
+          </div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-400/20 text-lg rotate-[-12deg] select-none whitespace-nowrap">
+            {userEmail} | Licensed to: {userEmail}
+          </div>
+          <div className="absolute bottom-20 left-10 text-slate-400/30 text-lg rotate-[15deg] select-none">
+            cracktoday.com
+          </div>
+        </div>
+
+        {/* PDF iframe with protection styles */}
+        <div
+          className={`w-full h-full ${isBlurred ? "blur-sm" : ""}`}
+          style={{
+            userSelect: "none",
+            WebkitUserSelect: "none",
+            MozUserSelect: "none",
+            msUserSelect: "none",
+            pointerEvents: isBlurred ? "none" : "auto",
+          }}
+        >
+          <iframe
+            src={`${paper.file_url}#toolbar=0&navpanes=0&scrollbar=1`}
+            className="w-full h-full border-0"
+            style={{
+              userSelect: "none",
+              WebkitUserSelect: "none",
+            }}
+            title={paper.title}
+          />
+        </div>
+      </div>
+
+      {/* Footer with security info */}
+      <div className="bg-slate-900 text-slate-400 text-xs px-4 py-2 flex items-center justify-between">
+        <span>This content is protected and monitored. Unauthorized sharing is prohibited.</span>
+        <span>{paper.title} | {paper.year}</span>
+      </div>
+    </div>
+  );
+}
+
 export function PreviousYearPapers() {
   const { batchId } = useParams();
   const { user } = useAuth();
@@ -36,6 +197,7 @@ export function PreviousYearPapers() {
   const [isEnrolled, setIsEnrolled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [viewingPaper, setViewingPaper] = useState<PreviousYearPaper | null>(null);
 
   useEffect(() => {
     if (batchId && user) {
@@ -343,15 +505,13 @@ export function PreviousYearPapers() {
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {paper.file_url ? (
                           <>
-                            <a
-                              href={paper.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => setViewingPaper(paper)}
                               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                             >
                               <Eye className="h-4 w-4" />
                               View
-                            </a>
+                            </button>
                             <button
                               onClick={() => handleDownload(paper)}
                               disabled={downloadingId === paper.id}
@@ -389,9 +549,22 @@ export function PreviousYearPapers() {
                 <li>• Focus on frequently asked topics and question types</li>
                 <li>• Track your progress across different years</li>
               </ul>
+              <p className="mt-3 text-xs text-blue-600">
+                <strong>Note:</strong> Downloaded PDFs include your email watermark for security purposes.
+                Online viewing has screenshot protection enabled.
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Secure PDF Viewer Modal */}
+        {viewingPaper && user?.email && (
+          <SecurePDFViewer
+            paper={viewingPaper}
+            userEmail={user.email}
+            onClose={() => setViewingPaper(null)}
+          />
+        )}
       </div>
     </div>
   );
