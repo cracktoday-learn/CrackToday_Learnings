@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, Newspaper, ArrowRight, History } from "lucide-react";
+import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, Newspaper, ArrowRight, History, Target } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -25,6 +25,7 @@ export function UserDashboard() {
   const { user } = useAuth();
   const [availableBatches, setAvailableBatches] = useState<Batch[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [completedTests, setCompletedTests] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
@@ -36,6 +37,16 @@ export function UserDashboard() {
       setAvailableBatches(batchData || []);
       const { data: purchaseData } = await supabase.from("purchases").select("*, batches(*)").eq("user_id", user?.id);
       setPurchases(purchaseData || []);
+      
+      // Fetch completed tests count
+      const { data: attemptsData, error: attemptsError } = await supabase
+        .from("test_attempts")
+        .select("id")
+        .eq("user_id", user?.id);
+      
+      if (!attemptsError && attemptsData) {
+        setCompletedTests(attemptsData.length);
+      }
     } catch (err) {
       toast.error("Failed to load data");
     } finally {
@@ -67,7 +78,7 @@ export function UserDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600"><ShoppingBag className="h-6 w-6" /></div>
@@ -76,8 +87,8 @@ export function UserDashboard() {
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><CheckCircle className="h-6 w-6" /></div>
-            <div><p className="text-sm font-medium text-slate-500">Available Batches</p><h3 className="text-2xl font-bold text-slate-900">{availableBatches.length}</h3></div>
+            <div className="h-12 w-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><Target className="h-6 w-6" /></div>
+            <div><p className="text-sm font-medium text-slate-500">Tests Completed</p><h3 className="text-2xl font-bold text-slate-900">{completedTests}</h3></div>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
@@ -90,6 +101,12 @@ export function UserDashboard() {
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600"><TrendingUp className="h-6 w-6" /></div>
             <div><p className="text-sm font-medium text-slate-500">Logged in as</p><h3 className="text-sm font-bold text-slate-900 truncate">{user?.email}</h3></div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600"><CheckCircle className="h-6 w-6" /></div>
+            <div><p className="text-sm font-medium text-slate-500">Available Batches</p><h3 className="text-2xl font-bold text-slate-900">{availableBatches.length}</h3></div>
           </div>
         </div>
       </div>
