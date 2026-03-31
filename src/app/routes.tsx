@@ -12,6 +12,7 @@ import { Checkout } from "./pages/user/Checkout";
 import { SubscriptionCheckout } from "./pages/user/SubscriptionCheckout";
 import { Leaderboard } from "./pages/user/Leaderboard";
 import { Rankings } from "./pages/user/Rankings";
+import { CurrentAffairs } from "./pages/user/CurrentAffairs";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
       },
       { path: "leaderboard", Component: Leaderboard },
       { path: "rankings", Component: Rankings },
+      { path: "current-affairs", Component: CurrentAffairs },
       { path: "pricing", Component: Pricing },
       { path: "*", Component: Home },
     ],

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, LogOut, UserCircle } from "lucide-react";
+import { PlayCircle, Trophy, CheckCircle, TrendingUp, FileText, ShoppingBag, LogOut, UserCircle, Newspaper, ArrowRight } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -107,6 +107,23 @@ export function UserDashboard() {
             <div><p className="text-sm font-medium text-slate-500">Logged in as</p><h3 className="text-sm font-bold text-slate-900 truncate">{user?.email}</h3></div>
           </div>
         </div>
+      </div>
+
+      {/* Current Affairs Quick Link */}
+      <div className="mb-6">
+        <Link
+          to="/current-affairs"
+          className="flex items-center gap-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+        >
+          <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center">
+            <Newspaper className="h-7 w-7" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xl font-bold">Current Affairs</h3>
+            <p className="text-white/80">Stay updated with the latest news and events</p>
+          </div>
+          <ArrowRight className="h-6 w-6" />
+        </Link>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
