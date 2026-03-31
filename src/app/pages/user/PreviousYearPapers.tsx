@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { FileText, Lock, ShoppingBag, Calendar, ExternalLink, ArrowLeft, BookOpen, Eye, Download, Loader2, Shield, AlertTriangle } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
@@ -31,52 +31,127 @@ interface PreviousYearPaper {
 function SecurePDFViewer({ paper, userEmail, onClose }: { paper: PreviousYearPaper; userEmail: string; onClose: () => void }) {
   const [isBlurred, setIsBlurred] = useState(false);
   const [warningShown, setWarningShown] = useState(false);
+  const [violationCount, setViolationCount] = useState(0);
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Request fullscreen on open
+    const requestFullscreen = async () => {
+      try {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+          await elem.requestFullscreen();
+        }
+      } catch (e) {
+        // Fullscreen may be blocked, continue anyway
+      }
+    };
+    requestFullscreen();
+
     // Prevent right-click
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       toast.error("Right-click is disabled for security reasons");
+      triggerBlur();
     };
 
     // Prevent keyboard shortcuts for screenshots
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Block Print Screen key
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      
+      // Block Print Screen key (Windows)
       if (e.key === "PrintScreen") {
         e.preventDefault();
-        setIsBlurred(true);
-        setWarningShown(true);
+        e.stopPropagation();
+        triggerBlur();
         toast.error("Screenshots are not allowed!");
-        setTimeout(() => setIsBlurred(false), 3000);
       }
 
-      // Block Ctrl+P (print)
+      // Mac screenshot shortcuts
+      // Cmd+Shift+3 (full screen)
+      // Cmd+Shift+4 (selection)
+      // Cmd+Shift+5 (screen recording)
+      // Cmd+Shift+Control+3/4 (copy to clipboard)
+      if (isMac && e.metaKey && e.shiftKey) {
+        if (e.key === '3' || e.key === '4' || e.key === '5') {
+          e.preventDefault();
+          e.stopPropagation();
+          triggerBlur();
+          toast.error("Mac screenshots are blocked!");
+        }
+      }
+
+      // Block Ctrl+P / Cmd+P (print)
       if ((e.ctrlKey || e.metaKey) && e.key === "p") {
         e.preventDefault();
-        toast.error("Printing is disabled for security reasons");
+        e.stopPropagation();
+        toast.error("Printing is disabled");
       }
 
-      // Block Ctrl+S (save)
+      // Block Ctrl+S / Cmd+S (save)
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        toast.error("Saving is disabled. Use the download button instead");
+        e.stopPropagation();
+        toast.error("Saving is disabled");
       }
 
-      // Block Ctrl+Shift+S (save as)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "s") {
+      // Block F12 (dev tools)
+      if (e.key === "F12") {
         e.preventDefault();
-        toast.error("Saving is disabled for security reasons");
+        e.stopPropagation();
+        toast.error("Developer tools are disabled");
+      }
+
+      // Block Ctrl+Shift+I / Cmd+Option+I (inspect element)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "i" || e.key === "I")) {
+        e.preventDefault();
+        e.stopPropagation();
+        toast.error("Inspect element is disabled");
+      }
+
+      // Block Ctrl+U / Cmd+U (view source)
+      if ((e.ctrlKey || e.metaKey) && e.key === "u") {
+        e.preventDefault();
+        e.stopPropagation();
+        toast.error("View source is disabled");
       }
     };
 
-    // Blur when window loses focus (possible screenshot attempt)
-    const handleBlur = () => {
+    // Trigger blur with violation tracking
+    const triggerBlur = () => {
+      setViolationCount(prev => {
+        const newCount = prev + 1;
+        if (newCount >= 3) {
+          // Auto-close after 3 violations
+          toast.error("Too many security violations. Closing viewer.");
+          setTimeout(() => onClose(), 2000);
+        }
+        return newCount;
+      });
+      
       setIsBlurred(true);
+      setWarningShown(true);
+      
+      // Clear previous timeout
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+      
+      // Keep blurred longer (10 seconds)
+      blurTimeoutRef.current = setTimeout(() => {
+        setIsBlurred(false);
+        setWarningShown(false);
+      }, 10000);
+    };
+
+    // Blur when window loses focus (screenshot tools often take focus)
+    const handleBlur = () => {
+      triggerBlur();
     };
 
     const handleFocus = () => {
-      setIsBlurred(false);
-      setWarningShown(false);
+      // Don't immediately unblur - wait for user to click
     };
 
     // Prevent drag and drop
@@ -84,20 +159,51 @@ function SecurePDFViewer({ paper, userEmail, onClose }: { paper: PreviousYearPap
       e.preventDefault();
     };
 
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("keydown", handleKeyDown);
+    // Detect visibility change (tab switching - possible screen recording)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        triggerBlur();
+      }
+    };
+
+    // Prevent copy
+    const handleCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      toast.error("Copying is disabled");
+    };
+
+    // Prevent cut
+    const handleCut = (e: ClipboardEvent) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener("contextmenu", handleContextMenu, true);
+    document.addEventListener("keydown", handleKeyDown, true);
     window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
     document.addEventListener("dragstart", handleDragStart);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("copy", handleCopy);
+    document.addEventListener("cut", handleCut);
 
     return () => {
-      document.removeEventListener("contextmenu", handleContextMenu);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("contextmenu", handleContextMenu, true);
+      document.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("dragstart", handleDragStart);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("copy", handleCopy);
+      document.removeEventListener("cut", handleCut);
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+      // Exit fullscreen on close
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
     };
-  }, []);
+  }, [onClose]);
 
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex flex-col">
@@ -143,16 +249,46 @@ function SecurePDFViewer({ paper, userEmail, onClose }: { paper: PreviousYearPap
           </div>
         )}
 
-        {/* Floating watermark overlay */}
+        {/* Floating watermark overlay - AGGRESSIVE PATTERN */}
         <div className="absolute inset-0 pointer-events-none z-5 overflow-hidden">
-          <div className="absolute top-20 right-8 text-slate-400/30 text-xl font-bold rotate-12 select-none">
+          {/* Repeating diagonal watermark pattern */}
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: `repeating-linear-gradient(
+              45deg,
+              transparent,
+              transparent 100px,
+              rgba(148, 163, 184, 0.3) 100px,
+              rgba(148, 163, 184, 0.3) 120px
+            )`,
+          }} />
+          
+          {/* Top right - cracktoday branding */}
+          <div className="absolute top-4 right-4 text-slate-400/40 text-2xl font-bold select-none bg-slate-900/20 px-4 py-2 rounded">
             cracktoday
           </div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-400/20 text-lg rotate-[-12deg] select-none whitespace-nowrap">
-            {userEmail} | Licensed to: {userEmail}
+          
+          {/* Center - large user email watermark */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-400/25 text-2xl font-bold rotate-[-30deg] select-none whitespace-nowrap">
+            CONFIDENTIAL - {userEmail} - Licensed User Only
           </div>
-          <div className="absolute bottom-20 left-10 text-slate-400/30 text-lg rotate-[15deg] select-none">
+          
+          {/* Multiple scattered watermarks */}
+          <div className="absolute top-1/4 left-1/4 text-slate-400/20 text-lg rotate-12 select-none">
             cracktoday.com
+          </div>
+          <div className="absolute top-3/4 right-1/4 text-slate-400/20 text-lg rotate-[-15deg] select-none">
+            {userEmail}
+          </div>
+          <div className="absolute bottom-1/4 left-1/3 text-slate-400/20 text-lg rotate-45 select-none">
+            cracktoday
+          </div>
+          <div className="absolute top-1/3 right-1/3 text-slate-400/20 text-lg rotate-[-45deg] select-none">
+            Licensed to {userEmail}
+          </div>
+          
+          {/* Bottom banner */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-slate-400/30 text-sm select-none bg-slate-900/30 px-6 py-2 rounded-full">
+            Protected Content • Unauthorized sharing prohibited • cracktoday.com
           </div>
         </div>
 
