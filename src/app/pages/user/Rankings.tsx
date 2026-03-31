@@ -29,6 +29,7 @@ interface RankingUser {
   timeTaken: number;
   testsCompleted: number;
   avatar: string;
+  avatarUrl?: string | null;
   date?: string;
 }
 
@@ -74,16 +75,32 @@ export function Rankings() {
   const fetchRealRankings = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch test attempts with user profile data including avatar_url
+      const { data: attemptsData, error: attemptsError } = await supabase
         .from("test_attempts")
         .select("*")
         .order("score", { ascending: false })
         .limit(100);
       
-      if (error) throw error;
+      if (attemptsError) throw attemptsError;
       
-      // Process and rank the data
-      const processed = data?.map((attempt, index) => ({
+      // Get unique user IDs to fetch their profiles
+      const userIds = [...new Set(attemptsData?.map(a => a.user_id) || [])];
+      
+      // Fetch profiles for avatar URLs
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, avatar_url")
+        .in("id", userIds);
+      
+      // Create a map of user_id to avatar_url
+      const avatarMap = new Map();
+      profilesData?.forEach(profile => {
+        avatarMap.set(profile.id, profile.avatar_url);
+      });
+      
+      // Process and rank the data with avatar URLs
+      const processed = attemptsData?.map((attempt, index) => ({
         id: attempt.user_id,
         rank: index + 1,
         name: `User ${attempt.user_id?.slice(0, 8)}`,
@@ -93,6 +110,7 @@ export function Rankings() {
         timeTaken: attempt.time_taken || 1800,
         testsCompleted: 1,
         avatar: `U${index + 1}`,
+        avatarUrl: avatarMap.get(attempt.user_id) || null,
         date: attempt.created_at,
       })) || [];
       
@@ -258,8 +276,12 @@ export function Rankings() {
                 
                 return (
                   <div key={userAtPos.id} className="flex flex-col items-center">
-                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full ${getRankColor(positions[actualIndex])} border-4 flex items-center justify-center mb-2`}>
-                      <span className="text-lg md:text-xl font-bold">{userAtPos.avatar}</span>
+                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full ${getRankColor(positions[actualIndex])} border-4 flex items-center justify-center mb-2 overflow-hidden`}>
+                      {userAtPos.avatarUrl ? (
+                        <img src={userAtPos.avatarUrl} alt={userAtPos.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-lg md:text-xl font-bold">{userAtPos.avatar}</span>
+                      )}
                     </div>
                     <div className="text-center mb-2">
                       <p className="font-semibold text-slate-900 text-sm md:text-base">{userAtPos.name}</p>
@@ -278,8 +300,12 @@ export function Rankings() {
           <div className="divide-y divide-slate-100">
             {filteredRankings.slice(3).map((user) => (
               <div key={user.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
-                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold">
-                  {user.avatar}
+                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold overflow-hidden">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    user.avatar
+                  )}
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-slate-900">{user.name}</p>
