@@ -55,10 +55,10 @@ export function AdminDashboard() {
         totalPurchases: purchaseCount || 0,
       });
 
-      // Get recent purchases with batch name
+      // Get recent purchases with batch name AND user profiles
       const { data: recent } = await supabase
         .from("purchases")
-        .select("*, batches(name, price)")
+        .select("*, batches(name, price), profiles(name, email)")
         .order("purchased_at", { ascending: false })
         .limit(5);
 
@@ -132,7 +132,7 @@ export function AdminDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-medium">User ID</th>
+                      <th className="p-4 font-medium">User Name</th>
                       <th className="p-4 font-medium">Batch</th>
                       <th className="p-4 font-medium">Amount</th>
                       <th className="p-4 font-medium">Date</th>
@@ -145,10 +145,10 @@ export function AdminDashboard() {
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                              {row.user_id?.charAt(0).toUpperCase()}
+                              {(row.profiles?.name || row.user_id)?.charAt(0).toUpperCase()}
                             </div>
                             <div className="text-sm font-medium text-slate-900">
-                              {row.user_id?.slice(0, 12)}...
+                              {row.profiles?.name || row.user_id?.slice(0, 12)}...
                             </div>
                           </div>
                         </td>

@@ -106,7 +106,7 @@ export function AdminUsers() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                  <th className="px-6 py-4 font-medium">User ID</th>
+                  <th className="px-6 py-4 font-medium">User Name</th>
                   <th className="px-6 py-4 font-medium">Enrolled Batches</th>
                   <th className="px-6 py-4 font-medium">Joined Date</th>
                   <th className="px-6 py-4 font-medium">Status</th>
