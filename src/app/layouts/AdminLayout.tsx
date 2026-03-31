@@ -1,10 +1,11 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Bell, Search, BookOpen, Tag, History } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Settings, LogOut, Bell, Search, BookOpen, Tag, History, Menu, X } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "../components/AuthProvider";
 import { supabase } from "../../utils/supabase/client";
 import { toast } from "sonner";
+import { useState } from "react";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,6 +15,7 @@ export function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -36,7 +38,7 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans">
-      {/* Sidebar */}
+      {/* Sidebar - Desktop */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-slate-200">
           <Link to="/" className="flex items-center gap-2">
@@ -81,8 +83,17 @@ export function AdminLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-40">
-          <div className="flex items-center flex-1">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-slate-600 hover:text-indigo-600 transition-colors"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+
+          <div className="flex items-center flex-1 ml-4 md:ml-0">
             <div className="relative w-full max-w-md hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -102,6 +113,43 @@ export function AdminLayout() {
             </div>
           </div>
         </header>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-b border-slate-200">
+            <div className="px-4 py-3 space-y-1">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-indigo-50 text-indigo-700"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <item.icon className={cn("h-5 w-5", isActive ? "text-indigo-600" : "text-slate-400")} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                Exit Admin
+              </button>
+            </div>
+          </div>
+        )}
 
         <main className="flex-1 overflow-auto bg-slate-50/50 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">

@@ -1,13 +1,15 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { BookOpen, User, LogOut } from "lucide-react";
+import { BookOpen, User, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
 import { AdminLink } from "../components/AdminLink";
 import { supabase } from "../../utils/supabase/client";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export function MainLayout() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -18,6 +20,14 @@ export function MainLayout() {
       navigate("/");
     }
   };
+
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/exams", label: "Exams" },
+    { to: "/current-affairs", label: "Current Affairs" },
+    { to: "/rankings", label: "Rankings" },
+    { to: "/pricing", label: "Pricing" },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -30,11 +40,11 @@ export function MainLayout() {
             </Link>
             
             <nav className="hidden md:flex items-center gap-8">
-              <Link to="/" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Home</Link>
-              <Link to="/exams" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Exams</Link>
-              <Link to="/current-affairs" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Current Affairs</Link>
-              <Link to="/rankings" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Rankings</Link>
-              <Link to="/pricing" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Pricing</Link>
+              {navLinks.map((link) => (
+                <Link key={link.to} to={link.to} className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+                  {link.label}
+                </Link>
+              ))}
             </nav>
 
             <div className="flex items-center gap-4">
@@ -43,29 +53,91 @@ export function MainLayout() {
                   <AdminLink />
                   <Link
                     to="/profile"
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors"
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors"
                   >
                     <User className="h-4 w-4" />
                     Profile
                   </Link>
-                  <button onClick={handleLogout} className="flex items-center gap-2 text-slate-600 hover:text-red-600 transition-colors text-sm font-medium">
+                  <button onClick={handleLogout} className="hidden sm:flex items-center gap-2 text-slate-600 hover:text-red-600 transition-colors text-sm font-medium">
                     <LogOut className="h-4 w-4" />
                     Logout
                   </button>
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+                  <Link to="/login" className="hidden sm:block text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
                     Login
                   </Link>
-                  <Link to="/signup" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                  <Link to="/signup" className="hidden sm:block bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Sign Up
+                  </Link>
+                </>
+              )}
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 text-slate-600 hover:text-indigo-600 transition-colors"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-t border-slate-200">
+            <div className="px-4 py-3 space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {user ? (
+                <>
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-base font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-base font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-base font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
                     Sign Up
                   </Link>
                 </>
               )}
             </div>
           </div>
-        </div>
+        )}
       </header>
 
       <main className="flex-1">
