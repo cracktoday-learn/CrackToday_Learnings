@@ -99,7 +99,7 @@ export function Rankings() {
     } catch (err) {
       console.error("Failed to fetch rankings:", err);
       toast.error("Failed to load real data");
-      setRankings(DUMMY_RANKINGS);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
