@@ -178,7 +178,6 @@ export function CurrentAffairs() {
           </div>
         ) : filteredAffairs.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-            <Newspaper className="h-12 w-12 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-600">No current affairs found for this category.</p>
           </div>
         ) : (
