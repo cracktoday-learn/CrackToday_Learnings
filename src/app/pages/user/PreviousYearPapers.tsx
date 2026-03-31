@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { FileText, Lock, ShoppingBag, Calendar, ExternalLink, ArrowLeft, BookOpen, Eye, Download } from "lucide-react";
+import { FileText, Lock, ShoppingBag, Calendar, ExternalLink, ArrowLeft, BookOpen, Eye, Download, Loader2 } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 interface Batch {
   id: string;
@@ -34,6 +35,7 @@ export function PreviousYearPapers() {
   const [papers, setPapers] = useState<PreviousYearPaper[]>([]);
   const [isEnrolled, setIsEnrolled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (batchId && user) {
@@ -95,6 +97,85 @@ export function PreviousYearPapers() {
       setPapers(data || []);
     } catch (err: any) {
       toast.error("Failed to load papers: " + err.message);
+    }
+  };
+
+  const addWatermarkToPDF = async (pdfBytes: Uint8Array, userEmail: string): Promise<Uint8Array> => {
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const pages = pdfDoc.getPages();
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    for (const page of pages) {
+      const { width, height } = page.getSize();
+
+      // Add "cracktoday" at top right corner
+      page.drawText("cracktoday", {
+        x: width - 120,
+        y: height - 30,
+        size: 16,
+        font: helveticaBold,
+        color: rgb(0.4, 0.4, 0.4),
+      });
+
+      // Add user email watermark diagonally across the page
+      const watermarkText = `Licensed to: ${userEmail}`;
+      page.drawText(watermarkText, {
+        x: width / 2 - 150,
+        y: height / 2,
+        size: 14,
+        font: helveticaFont,
+        color: rgb(0.7, 0.7, 0.7),
+        rotate: { type: 'degrees', angle: 45 } as any,
+      });
+
+      // Add small footer watermark on each page
+      page.drawText(`Downloaded by ${userEmail} | cracktoday.com`, {
+        x: width / 2 - 100,
+        y: 20,
+        size: 8,
+        font: helveticaFont,
+        color: rgb(0.5, 0.5, 0.5),
+      });
+    }
+
+    return await pdfDoc.save();
+  };
+
+  const handleDownload = async (paper: PreviousYearPaper) => {
+    if (!paper.file_url || !user?.email) return;
+
+    setDownloadingId(paper.id);
+    try {
+      // Fetch the PDF
+      const response = await fetch(paper.file_url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch PDF");
+      }
+
+      const pdfBytes = new Uint8Array(await response.arrayBuffer());
+
+      // Add watermark
+      const watermarkedPdfBytes = await addWatermarkToPDF(pdfBytes, user.email);
+
+      // Create download link
+      const blob = new Blob([watermarkedPdfBytes as BlobPart], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${paper.title.replace(/[^a-zA-Z0-9]/g, "_")}_watermarked.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("PDF downloaded with watermark");
+    } catch (err: any) {
+      toast.error("Failed to download: " + err.message);
+      // Fallback: open original file
+      window.open(paper.file_url, "_blank");
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -271,14 +352,18 @@ export function PreviousYearPapers() {
                               <Eye className="h-4 w-4" />
                               View
                             </a>
-                            <a
-                              href={paper.file_url}
-                              download
-                              className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                            <button
+                              onClick={() => handleDownload(paper)}
+                              disabled={downloadingId === paper.id}
+                              className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <Download className="h-4 w-4" />
-                              Download
-                            </a>
+                              {downloadingId === paper.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4" />
+                              )}
+                              {downloadingId === paper.id ? "Processing..." : "Download"}
+                            </button>
                           </>
                         ) : (
                           <span className="text-sm text-slate-400 italic">No file available</span>
