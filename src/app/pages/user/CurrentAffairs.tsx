@@ -16,13 +16,21 @@ interface CurrentAffair {
 
 const CATEGORIES = [
   { id: "all", name: "All Categories" },
-  { id: "national", name: "National" },
+  { id: "schemes", name: "Government Schemes" },
+  { id: "polity", name: "Constitution & Polity" },
+  { id: "national", name: "National News" },
+  { id: "defence", name: "Defence & Security" },
+  { id: "appointments", name: "Appointments" },
+  { id: "awards", name: "Awards & Honors" },
   { id: "international", name: "International" },
-  { id: "economy", name: "Economy" },
-  { id: "polity", name: "Polity" },
+  { id: "bilateral", name: "Bilateral Relations" },
   { id: "science", name: "Science & Tech" },
+  { id: "sports", name: "Sports" },
+  { id: "economy", name: "Economy" },
   { id: "environment", name: "Environment" },
-  { id: "culture", name: "Art & Culture" },
+  { id: "banking", name: "Banking" },
+  { id: "health", name: "Health" },
+  { id: "education", name: "Education" },
 ];
 
 // DUMMY DATA - Replace with real data from Supabase

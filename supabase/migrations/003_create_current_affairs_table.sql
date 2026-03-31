@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS current_affairs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   summary TEXT NOT NULL,
-  category TEXT NOT NULL CHECK (category IN ('national', 'international', 'economy', 'polity', 'science', 'environment', 'culture')),
+  category TEXT NOT NULL CHECK (category IN ('schemes', 'polity', 'national', 'defence', 'appointments', 'awards', 'international', 'bilateral', 'science', 'sports', 'economy', 'environment', 'banking', 'health', 'education')),
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   source_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

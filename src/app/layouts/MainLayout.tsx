@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { BookOpen, User, LogOut, Trophy } from "lucide-react";
+import { BookOpen, User, LogOut, Trophy, Newspaper } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
 import { AdminLink } from "../components/AdminLink";
 import { supabase } from "../../utils/supabase/client";
@@ -32,6 +32,10 @@ export function MainLayout() {
             <nav className="hidden md:flex items-center gap-8">
               <Link to="/" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Home</Link>
               <Link to="/exams" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Exams</Link>
+              <Link to="/current-affairs" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors flex items-center gap-1">
+                <Newspaper className="h-4 w-4" />
+                Current Affairs
+              </Link>
               <Link to="/rankings" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Rankings</Link>
               <Link to="/pricing" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Pricing</Link>
             </nav>

@@ -8,17 +8,26 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// News sources to monitor (simplified for demo - in production, use RSS feeds or news APIs)
+// Exam-focused current affairs topics for UPSC/SSC/Competitive exams
 const NEWS_TOPICS = [
-  "Indian politics and government decisions",
-  "Indian economy and financial markets",
-  "Science and technology developments in India",
-  "International relations involving India",
-  "Environmental issues and climate change in India",
-  "Indian culture and heritage",
+  "Latest government schemes and welfare programs in India",
+  "Important Constitutional amendments or Supreme Court judgments",
+  "Union Cabinet decisions and major policy announcements",
+  "Indian Defence developments - new equipment, military exercises",
+  "Important appointments to constitutional and statutory bodies",
+  "Major awards and honors (Padma, Nobel, Booker, etc.)",
+  "International summits India participated in (G20, BRICS, etc.)",
+  "Bilateral agreements with important countries",
+  "Space missions and ISRO achievements",
+  "Major sports achievements and tournaments",
+  "Important economic indicators and RBI decisions",
+  "Environmental conferences and climate change commitments",
+  "Banking sector news and financial reforms",
+  "Health initiatives and medical breakthroughs in India",
+  "Education policy updates and exam reforms",
 ];
 
-const CATEGORIES = ["national", "polity", "economy", "science", "international", "environment", "culture"];
+const CATEGORIES = ["schemes", "polity", "national", "defence", "appointments", "awards", "international", "bilateral", "science", "sports", "economy", "environment", "banking", "health", "education"];
 
 interface CurrentAffair {
   title: string;
@@ -40,13 +49,26 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Clear all existing current affairs (only keep today's news)
+    console.log("Clearing old current affairs...");
+    const { error: deleteError } = await supabase
+      .from("current_affairs")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all rows
+
+    if (deleteError) {
+      console.error("Error clearing old data:", deleteError);
+      throw deleteError;
+    }
+    console.log("Old data cleared successfully");
+
     // Generate current affairs using Groq
     const currentAffairs = await generateCurrentAffairs();
 
-    // Store in database
+    // Store in database (all new data)
     const { data, error } = await supabase
       .from("current_affairs")
-      .upsert(currentAffairs, { onConflict: "title" });
+      .insert(currentAffairs);
 
     if (error) {
       throw error;
@@ -79,64 +101,83 @@ serve(async (req) => {
 });
 
 async function generateCurrentAffairs(): Promise<CurrentAffair[]> {
-  if (!GROQ_API_KEY) {
+  const key = Deno.env.get("GROQ_API_KEY");
+  console.log("GROQ_API_KEY present:", !!key);
+  console.log("GROQ_API_KEY length:", key?.length);
+  
+  if (!key) {
     throw new Error("GROQ_API_KEY environment variable not set");
   }
 
   const currentDate = new Date().toISOString().split("T")[0];
   const affairs: CurrentAffair[] = [];
 
-  // Generate content for each category
   for (let i = 0; i < NEWS_TOPICS.length; i++) {
     const topic = NEWS_TOPICS[i];
     const category = CATEGORIES[i % CATEGORIES.length];
 
     const prompt = `Generate a realistic current affairs news item about "${topic}" as of ${currentDate}.
     
+    This is for UPSC/SSC/Competitive exam preparation. Focus on:
+    - Names of schemes, policies, or key people involved
+    - Specific dates, numbers, or statistics
+    - Why this news is important for exams
+    - Any related previous year questions or exam relevance
+    
     Format your response as a JSON object with these exact fields:
     {
-      "title": "A compelling news headline (max 80 characters)",
-      "summary": "A 2-3 sentence summary of the news (max 200 characters)",
-      "source_url": "A plausible URL for this news source"
+      "title": "A compelling news headline with specific keywords (max 80 characters)",
+      "summary": "3-4 sentence summary including key facts, figures, and exam importance (max 250 characters)",
+      "source_url": "https://pib.gov.in or relevant government website"
     }
     
-    Make it realistic and timely. Only return the JSON, no other text.`;
+    Make it factually accurate and exam-relevant. Only return the JSON, no other text.`;
 
     try {
+      console.log(`Calling Groq API for topic: ${topic}`);
+      
+      const requestBody = {
+        model: "llama-3.1-8b-instant",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert in UPSC/SSC/Competitive exam current affairs. Generate factual, exam-relevant news with specific names, dates, numbers, and policy details in valid JSON format."
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+      };
+      
+      console.log("Request body:", JSON.stringify(requestBody));
+      
       const response = await fetch(GROQ_API_URL, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          "Authorization": `Bearer ${key}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: "llama3-8b-8192", // Fast and cost-effective
-          messages: [
-            {
-              role: "system",
-              content: "You are a helpful assistant that generates realistic current affairs news items in valid JSON format."
-            },
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: 500,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log(`Groq API response status: ${response.status}`);
+
       if (!response.ok) {
-        console.error(`Groq API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Groq API error ${response.status}: ${errorText}`);
         continue;
       }
 
       const result = await response.json();
+      console.log(`Groq API result for ${topic}:`, JSON.stringify(result).slice(0, 200));
+      
       const content = result.choices[0]?.message?.content;
 
       if (content) {
         try {
-          // Extract JSON from response (in case there's extra text)
           const jsonMatch = content.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
@@ -147,9 +188,11 @@ async function generateCurrentAffairs(): Promise<CurrentAffair[]> {
               date: currentDate,
               source_url: parsed.source_url || "https://www.google.com/search",
             });
+            console.log(`Successfully added affair: ${parsed.title}`);
           }
         } catch (parseError) {
           console.error("Failed to parse JSON:", parseError);
+          console.error("Raw content:", content);
         }
       }
     } catch (error) {
@@ -157,5 +200,6 @@ async function generateCurrentAffairs(): Promise<CurrentAffair[]> {
     }
   }
 
+  console.log(`Total affairs generated: ${affairs.length}`);
   return affairs;
 }
