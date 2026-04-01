@@ -85,89 +85,161 @@ export function Home() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <motion.div 
-            className="max-w-2xl"
-            initial="initial"
-            animate="animate"
-            variants={staggerContainer}
-          >
-            {/* Floating Badge */}
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Side - Hero Content */}
             <motion.div 
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 font-medium text-sm mb-6 border border-indigo-500/20"
-              variants={fadeInUp}
-              {...floatingAnimation}
+              initial="initial"
+              animate="animate"
+              variants={staggerContainer}
             >
-              <motion.span 
-                className="flex h-2 w-2 rounded-full bg-indigo-500"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-              <Sparkles className="h-3 w-3" />
-              New Batches Starting March 2026
-            </motion.div>
-
-            {/* Hero Title with Gradient Animation */}
-            <motion.h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight mb-6"
-              variants={fadeInUp}
-            >
-              Crack Your Government Exam{" "}
-              <motion.span 
-                className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 inline-block"
-                animate={{ 
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
-                }}
-                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                style={{ backgroundSize: "200% 200%" }}
-              >
-                Today
-              </motion.span>
-            </motion.h1>
-
-            {/* Description */}
-            <motion.p 
-              className="text-lg text-slate-300 mb-10 leading-relaxed max-w-xl"
-              variants={fadeInUp}
-            >
-              Join India's most trusted test series platform. Get exam-ready with high-quality mock tests, previous year papers, and detailed video solutions.
-            </motion.p>
-
-            {/* CTA Buttons */}
-            <motion.div 
-              className="flex flex-wrap gap-4"
-              variants={fadeInUp}
-            >
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/dashboard" className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all shadow-lg shadow-indigo-500/30">
-                  Start Free Trial <ArrowRight className="h-5 w-5" />
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/exams" className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold backdrop-blur-sm transition-all border border-white/10">
-                  Explore Exams
-                </Link>
-              </motion.div>
-            </motion.div>
-            
-            {/* Stats */}
-            <motion.div 
-              className="mt-12 flex items-center gap-6 text-sm font-medium text-slate-400"
-              variants={fadeInUp}
-            >
+              {/* Floating Badge */}
               <motion.div 
-                className="flex items-center gap-2"
-                whileHover={{ x: 5, color: "#818cf8" }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 font-medium text-sm mb-6 border border-indigo-500/20"
+                variants={fadeInUp}
+                {...floatingAnimation}
               >
-                <CheckCircle className="h-5 w-5 text-indigo-400" /> 10M+ Users
+                <motion.span 
+                  className="flex h-2 w-2 rounded-full bg-indigo-500"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+                <Sparkles className="h-3 w-3" />
+                New Batches Starting March 2026
               </motion.div>
-              <motion.div 
-                className="flex items-center gap-2"
-                whileHover={{ x: 5, color: "#818cf8" }}
+
+              {/* Hero Title with Gradient Animation */}
+              <motion.h1 
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight mb-6"
+                variants={fadeInUp}
               >
-                <CheckCircle className="h-5 w-5 text-indigo-400" /> 500+ Exams Covered
+                Crack Your Government Exam{" "}
+                <motion.span 
+                  className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 inline-block"
+                  animate={{ 
+                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
+                  }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                  style={{ backgroundSize: "200% 200%" }}
+                >
+                  Today
+                </motion.span>
+              </motion.h1>
+
+              {/* Description */}
+              <motion.p 
+                className="text-lg text-slate-300 mb-10 leading-relaxed max-w-xl"
+                variants={fadeInUp}
+              >
+                Join India's most trusted test series platform. Get exam-ready with high-quality mock tests, previous year papers, and detailed video solutions.
+              </motion.p>
+
+              {/* CTA Buttons */}
+              <motion.div 
+                className="flex flex-wrap gap-4"
+                variants={fadeInUp}
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/dashboard" className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all shadow-lg shadow-indigo-500/30">
+                    Start Free Trial <ArrowRight className="h-5 w-5" />
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/exams" className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold backdrop-blur-sm transition-all border border-white/10">
+                    Explore Exams
+                  </Link>
+                </motion.div>
+              </motion.div>
+              
+              {/* Stats */}
+              <motion.div 
+                className="mt-12 flex items-center gap-6 text-sm font-medium text-slate-400"
+                variants={fadeInUp}
+              >
+                <motion.div 
+                  className="flex items-center gap-2"
+                  whileHover={{ x: 5, color: "#818cf8" }}
+                >
+                  <CheckCircle className="h-5 w-5 text-indigo-400" /> 10M+ Users
+                </motion.div>
+                <motion.div 
+                  className="flex items-center gap-2"
+                  whileHover={{ x: 5, color: "#818cf8" }}
+                >
+                  <CheckCircle className="h-5 w-5 text-indigo-400" /> 500+ Exams Covered
+                </motion.div>
               </motion.div>
             </motion.div>
-          </motion.div>
+
+            {/* Right Side - Competition Card */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              className="hidden lg:block"
+            >
+              <div className="bg-gradient-to-br from-amber-500/90 to-orange-600/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/10 relative overflow-hidden">
+                {/* Animated background */}
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-orange-500/20"
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  style={{ transformOrigin: "center" }}
+                />
+                
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                      <Trophy className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">Live Competition</h3>
+                      <p className="text-white/80 text-sm">Compete & Win</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-white/90 mb-6 leading-relaxed">
+                    Challenge other learners in real-time tests. Compare scores, climb the leaderboard, and prove your skills!
+                  </p>
+                  
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="flex -space-x-2">
+                      {[1,2,3,4].map((i) => (
+                        <div key={i} className="w-8 h-8 rounded-full bg-white/20 border-2 border-amber-500 flex items-center justify-center text-xs text-white font-medium">
+                          {i}
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-white/80 text-sm">+1000 competing now</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Link 
+                      to="/dashboard"
+                      className="flex-1 bg-white text-amber-600 hover:bg-amber-50 px-4 py-3 rounded-xl font-semibold text-center transition-colors"
+                    >
+                      Join Competition
+                    </Link>
+                    <Link 
+                      to="/competition-help" 
+                      className="px-4 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-colors text-sm"
+                    >
+                      Learn More
+                    </Link>
+                  </div>
+                </div>
+                
+                {/* Live indicator */}
+                <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500/80 px-3 py-1 rounded-full">
+                  <motion.div 
+                    className="w-2 h-2 bg-white rounded-full"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                  <span className="text-white text-xs font-medium">LIVE</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -186,49 +258,12 @@ export function Home() {
           </motion.div>
 
           <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            {/* Competition Card - Special Prominent Card */}
-            <motion.div
-              variants={scaleIn}
-              whileHover={{ y: -8, scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 cursor-pointer block h-full"
-            >
-              <motion.div 
-                className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-6 backdrop-blur-sm"
-                whileHover={{ rotate: 10, scale: 1.1 }}
-              >
-                <Trophy className="h-6 w-6 text-white" />
-              </motion.div>
-              <h3 className="text-xl font-bold text-white mb-2">Live Competition</h3>
-              <p className="text-white/80 text-sm mb-6">Compete with others in real-time tests</p>
-              <div className="flex items-center justify-between gap-2">
-                <Link 
-                  to="/dashboard"
-                  className="flex items-center text-white font-medium text-sm hover:underline whitespace-nowrap"
-                >
-                  Join Now <ArrowRight className="h-4 w-4 ml-1" />
-                </Link>
-                <Link 
-                  to="/competition-help" 
-                  className="text-white/60 hover:text-white text-xs underline whitespace-nowrap"
-                >
-                  How it works?
-                </Link>
-              </div>
-              {/* Animated pulse effect */}
-              <motion.div 
-                className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full"
-                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </motion.div>
-
             {popularExams.map((exam) => (
               <motion.div
                 key={exam.title}
