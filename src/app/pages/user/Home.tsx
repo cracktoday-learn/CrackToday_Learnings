@@ -1,11 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 import { ArrowRight, CheckCircle, TrendingUp, Users, Award, Clock, BookOpen, Sparkles, Trophy } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { motion } from "framer-motion";
-import { supabase } from "../../../utils/supabase/client";
-
-import { User } from "@supabase/supabase-js";
+import { useAuth } from "../../components/AuthProvider";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -40,15 +37,7 @@ const floatingAnimation = {
 
 export function Home() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    checkUser();
-  }, []);
+  const { user } = useAuth();
 
   const handleLearnMore = () => {
     if (user) {
