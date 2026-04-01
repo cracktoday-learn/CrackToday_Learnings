@@ -271,21 +271,33 @@ export function TestEvaluation() {
     let wrong = 0;
     let skipped = 0;
     
-    wrongQuestions.forEach(q => {
+    console.log('Submitting reattempt. wrongQuestions:', wrongQuestions.length);
+    console.log('reattemptAnswers:', reattemptAnswers);
+    
+    wrongQuestions.forEach((q, index) => {
+      const hasAnswer = q.id in reattemptAnswers;
       const userAnswer = reattemptAnswers[q.id];
-      if (!userAnswer) {
+      
+      console.log(`Q${index + 1} (${q.id}): hasAnswer=${hasAnswer}, userAnswer=${userAnswer}, correct=${q.correct_answer}`);
+      
+      if (!hasAnswer) {
         skipped++;
+        console.log(`  -> Counted as SKIPPED`);
       } else if (userAnswer === q.correct_answer) {
         correct++;
+        console.log(`  -> Counted as CORRECT`);
       } else {
         wrong++;
+        console.log(`  -> Counted as WRONG`);
       }
     });
+    
+    console.log(`Final: correct=${correct}, wrong=${wrong}, skipped=${skipped}`);
     
     const percentage = Math.round((correct / wrongQuestions.length) * 100);
     setReattemptScore({ correct, wrong, skipped, total: wrongQuestions.length, percentage });
     setReattemptSubmitted(true);
-    toast.success(`Reattempt completed! Correct: ${correct}, Wrong: ${wrong}, Skipped: ${skipped}`);
+    toast.success(`Correct: ${correct}, Wrong: ${wrong}, Skipped: ${skipped}`);
   };
 
   const closeReattempt = () => {
