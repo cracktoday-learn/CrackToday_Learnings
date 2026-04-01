@@ -53,29 +53,42 @@ export function LiveTestsList() {
   const fetchLiveTests = async () => {
     setLoading(true);
     try {
-      // Get live tests with participant count and user registration status
+      // Get live tests for this batch
       const { data: tests, error } = await supabase
         .from("live_tests")
-        .select(`
-          *,
-          participants:live_test_participants(count),
-          my_registration:live_test_participants!inner(user_id)
-        `)
+        .select("*")
         .eq("batch_id", batchId)
         .gte("scheduled_at", new Date().toISOString())
         .order("scheduled_at", { ascending: true });
 
       if (error) throw error;
 
-      // Format the data
-      const formattedTests = tests?.map((test: any) => ({
-        ...test,
-        participant_count: test.participants?.[0]?.count || 0,
-        is_registered: test.my_registration?.length > 0
-      })) || [];
+      // Get participant counts and registration status separately
+      const formattedTests = await Promise.all((tests || []).map(async (test: any) => {
+        // Get participant count
+        const { count } = await supabase
+          .from("live_test_participants")
+          .select("*", { count: 'exact', head: true })
+          .eq("live_test_id", test.id);
+
+        // Check if user is registered
+        const { data: myReg } = await supabase
+          .from("live_test_participants")
+          .select("id")
+          .eq("live_test_id", test.id)
+          .eq("user_id", user?.id)
+          .maybeSingle();
+
+        return {
+          ...test,
+          participant_count: count || 0,
+          is_registered: !!myReg
+        };
+      }));
 
       setLiveTests(formattedTests);
     } catch (err) {
+      console.error("Fetch error:", err);
       toast.error("Failed to load live tests");
     } finally {
       setLoading(false);
@@ -92,7 +105,7 @@ export function LiveTestsList() {
         .from("live_tests")
         .insert({
           batch_id: batchId,
-          test_number: 1, // Default to test 1, could be selected
+          test_number: 1,
           scheduled_at: scheduledTime.toISOString(),
           duration_minutes: 60,
           created_by: user?.id
@@ -100,19 +113,28 @@ export function LiveTestsList() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Create live test error:", error);
+        toast.error(error.message || "Failed to schedule live test");
+        return;
+      }
 
       // Auto-register the creator
-      await supabase.from("live_test_participants").insert({
+      const { error: regError } = await supabase.from("live_test_participants").insert({
         live_test_id: data.id,
         user_id: user?.id,
         status: 'registered'
       });
 
+      if (regError) {
+        console.error("Registration error:", regError);
+      }
+
       toast.success("Live test scheduled! Starting in 30 minutes");
       fetchLiveTests();
-    } catch (err) {
-      toast.error("Failed to schedule live test");
+    } catch (err: any) {
+      console.error("Schedule error:", err);
+      toast.error(err?.message || "Failed to schedule live test");
     } finally {
       setCreating(false);
     }
