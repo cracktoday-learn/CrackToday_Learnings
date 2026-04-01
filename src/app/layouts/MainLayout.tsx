@@ -21,7 +21,15 @@ export function MainLayout() {
     }
   };
 
-  const navLinks = [
+  const publicNavLinks = [
+    { to: "/", label: "Home" },
+    { to: "/exams", label: "Exams" },
+    { to: "/current-affairs", label: "Current Affairs" },
+    { to: "/rankings", label: "Rankings" },
+    { to: "/pricing", label: "Pricing" },
+  ];
+
+  const loggedInNavLinks = [
     { to: "/", label: "Home" },
     { to: "/exams", label: "Exams" },
     { to: "/performance", label: "Performance" },
@@ -29,6 +37,8 @@ export function MainLayout() {
     { to: "/rankings", label: "Rankings" },
     { to: "/pricing", label: "Pricing" },
   ];
+
+  const navLinks = user ? loggedInNavLinks : publicNavLinks;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
