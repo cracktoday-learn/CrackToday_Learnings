@@ -82,6 +82,10 @@ export function TestEvaluation() {
   const [showReattempt, setShowReattempt] = useState(false);
   const [wrongQuestions, setWrongQuestions] = useState<Question[]>([]);
   const [reattemptLoading, setReattemptLoading] = useState(false);
+  const [reattemptAnswers, setReattemptAnswers] = useState<Record<string, string>>({});
+  const [reattemptCurrentIndex, setReattemptCurrentIndex] = useState(0);
+  const [reattemptSubmitted, setReattemptSubmitted] = useState(false);
+  const [reattemptScore, setReattemptScore] = useState({ correct: 0, total: 0, percentage: 0 });
 
   const [smartInsights, setSmartInsights] = useState<SmartInsight[]>([
     { subject: 'Polity', lostMarks: 15, suggestion: 'Revise Fundamental Rights', severity: 'high' },
@@ -247,11 +251,39 @@ export function TestEvaluation() {
       
       setWrongQuestions(wrongQs);
       setShowReattempt(true);
+      setReattemptAnswers({});
+      setReattemptCurrentIndex(0);
+      setReattemptSubmitted(false);
+      setReattemptScore({ correct: 0, total: 0, percentage: 0 });
     } catch (err) {
       toast.error('Failed to load questions');
     } finally {
       setReattemptLoading(false);
     }
+  };
+
+  const handleReattemptAnswer = (questionId: string, answer: string) => {
+    setReattemptAnswers(prev => ({ ...prev, [questionId]: answer }));
+  };
+
+  const submitReattempt = () => {
+    let correct = 0;
+    wrongQuestions.forEach(q => {
+      if (reattemptAnswers[q.id] === q.correct_answer) {
+        correct++;
+      }
+    });
+    const percentage = Math.round((correct / wrongQuestions.length) * 100);
+    setReattemptScore({ correct, total: wrongQuestions.length, percentage });
+    setReattemptSubmitted(true);
+    toast.success(`Reattempt completed! You got ${correct}/${wrongQuestions.length} correct`);
+  };
+
+  const closeReattempt = () => {
+    setShowReattempt(false);
+    setReattemptAnswers({});
+    setReattemptCurrentIndex(0);
+    setReattemptSubmitted(false);
   };
 
   const calculatePercentile = () => {
@@ -546,93 +578,172 @@ export function TestEvaluation() {
           </div>
         </div>
 
-        {/* Reattempt Modal */}
+        {/* Reattempt Modal - Interactive Test Interface */}
         {showReattempt && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             >
+              {/* Header */}
               <div className="p-6 border-b border-slate-200 flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">Reattempt Wrong Questions</h2>
-                  <p className="text-sm text-slate-500">Practice makes perfect! Review your mistakes.</p>
+                  <p className="text-sm text-slate-500">
+                    {reattemptSubmitted 
+                      ? 'Review your reattempt results below' 
+                      : `Question ${reattemptCurrentIndex + 1} of ${wrongQuestions.length}`}
+                  </p>
                 </div>
                 <button 
-                  onClick={() => setShowReattempt(false)}
+                  onClick={closeReattempt}
                   className="text-slate-400 hover:text-slate-600"
                 >
                   <AlertCircle className="h-6 w-6" />
                 </button>
               </div>
               
-              <div className="p-6 space-y-6">
+              <div className="p-6">
                 {reattemptLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                   </div>
-                ) : (
-                  <>
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                      <p className="text-amber-800 font-medium">
-                        You got {wrongQuestions.length} question(s) wrong. Review them below:
+                ) : reattemptSubmitted ? (
+                  /* Results Screen */
+                  <div className="text-center py-8">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                        reattemptScore.percentage >= 70 ? 'bg-emerald-100' : 'bg-amber-100'
+                      }`}
+                    >
+                      {reattemptScore.percentage >= 70 
+                        ? <CheckCircle className="h-12 w-12 text-emerald-600" />
+                        : <AlertCircle className="h-12 w-12 text-amber-600" />
+                      }
+                    </motion.div>
+                    <h3 className="text-3xl font-bold text-slate-900 mb-2">{reattemptScore.percentage}%</h3>
+                    <p className="text-lg text-slate-600 mb-4">
+                      You got {reattemptScore.correct} out of {reattemptScore.total} correct
+                    </p>
+                    <div className="bg-slate-50 rounded-xl p-4 mb-6">
+                      <p className="text-sm text-slate-600">
+                        {reattemptScore.percentage >= 70 
+                          ? 'Great improvement! Keep practicing to maintain this score.' 
+                          : 'Keep practicing! Review the explanations to improve further.'}
                       </p>
                     </div>
-                    
-                    {wrongQuestions.map((q, index) => (
-                      <div key={q.id} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                        <div className="flex items-start gap-3 mb-3">
-                          <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-sm font-bold">Q{index + 1}</span>
-                          <p className="font-medium text-slate-900">{q.question}</p>
+                  </div>
+                ) : (
+                  /* Question Screen */
+                  <>
+                    {wrongQuestions.length > 0 && (
+                      <div className="space-y-4">
+                        {/* Progress Bar */}
+                        <div className="w-full bg-slate-200 rounded-full h-2 mb-6">
+                          <div 
+                            className="bg-indigo-600 h-2 rounded-full transition-all"
+                            style={{ width: `${((reattemptCurrentIndex + 1) / wrongQuestions.length) * 100}%` }}
+                          />
                         </div>
                         
-                        <div className="space-y-2 ml-8">
-                          <div className={`p-2 rounded-lg text-sm ${q.correct_answer === 'A' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-white'}`}>
-                            <span className="font-bold mr-2">A.</span>{q.option_a}
-                          </div>
-                          <div className={`p-2 rounded-lg text-sm ${q.correct_answer === 'B' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-white'}`}>
-                            <span className="font-bold mr-2">B.</span>{q.option_b}
-                          </div>
-                          <div className={`p-2 rounded-lg text-sm ${q.correct_answer === 'C' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-white'}`}>
-                            <span className="font-bold mr-2">C.</span>{q.option_c}
-                          </div>
-                          <div className={`p-2 rounded-lg text-sm ${q.correct_answer === 'D' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-white'}`}>
-                            <span className="font-bold mr-2">D.</span>{q.option_d}
+                        {/* Question */}
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                          <p className="font-medium text-slate-900 mb-4">
+                            {wrongQuestions[reattemptCurrentIndex].question}
+                          </p>
+                          
+                          {/* Options */}
+                          <div className="space-y-2">
+                            {['A', 'B', 'C', 'D'].map((opt) => {
+                              const q = wrongQuestions[reattemptCurrentIndex];
+                              const isSelected = reattemptAnswers[q.id] === opt;
+                              return (
+                                <button
+                                  key={opt}
+                                  onClick={() => handleReattemptAnswer(q.id, opt)}
+                                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                                    isSelected
+                                      ? 'bg-indigo-600 text-white border-indigo-600'
+                                      : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                                  }`}
+                                >
+                                  <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                    isSelected ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {opt}
+                                  </span>
+                                  <span>{q[`option_${opt.toLowerCase()}` as keyof Question]}</span>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                         
-                        <div className="mt-3 ml-8 flex items-center gap-2">
-                          <span className="text-sm font-medium text-slate-600">Correct Answer:</span>
-                          <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">{q.correct_answer}</span>
+                        {/* Navigation */}
+                        <div className="flex items-center justify-between pt-4">
+                          <button
+                            onClick={() => setReattemptCurrentIndex(i => Math.max(0, i - 1))}
+                            disabled={reattemptCurrentIndex === 0}
+                            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-medium disabled:opacity-50 hover:bg-slate-50"
+                          >
+                            Previous
+                          </button>
+                          
+                          {reattemptCurrentIndex < wrongQuestions.length - 1 ? (
+                            <button
+                              onClick={() => setReattemptCurrentIndex(i => Math.min(wrongQuestions.length - 1, i + 1))}
+                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
+                            >
+                              Next
+                            </button>
+                          ) : (
+                            <button
+                              onClick={submitReattempt}
+                              disabled={Object.keys(reattemptAnswers).length < wrongQuestions.length}
+                              className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                              Submit Reattempt
+                            </button>
+                          )}
                         </div>
                         
-                        {q.explanation && (
-                          <div className="mt-3 ml-8 bg-blue-50 border border-blue-100 rounded-lg p-3">
-                            <p className="text-sm text-blue-800">
-                              <span className="font-semibold">Explanation:</span> {q.explanation}
-                            </p>
-                          </div>
-                        )}
+                        <p className="text-sm text-slate-500 text-center">
+                          Answered: {Object.keys(reattemptAnswers).length} / {wrongQuestions.length}
+                        </p>
                       </div>
-                    ))}
+                    )}
                   </>
                 )}
               </div>
               
+              {/* Footer */}
               <div className="p-6 border-t border-slate-200 flex gap-3">
-                <button
-                  onClick={() => navigate(`/test/${batchId}`)}
-                  className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
-                >
-                  Take Full Test Again
-                </button>
-                <button
-                  onClick={() => setShowReattempt(false)}
-                  className="flex-1 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-medium hover:bg-slate-50 transition-colors"
-                >
-                  Close
-                </button>
+                {reattemptSubmitted ? (
+                  <>
+                    <button
+                      onClick={() => navigate(`/test/${batchId}`)}
+                      className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700"
+                    >
+                      Take Full Test
+                    </button>
+                    <button
+                      onClick={closeReattempt}
+                      className="flex-1 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-medium hover:bg-slate-50"
+                    >
+                      Close
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={closeReattempt}
+                    className="w-full bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-medium hover:bg-slate-50"
+                  >
+                    Cancel Reattempt
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>
