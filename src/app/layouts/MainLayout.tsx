@@ -24,6 +24,7 @@ export function MainLayout() {
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/exams", label: "Exams" },
+    { to: "/performance", label: "Performance" },
     { to: "/current-affairs", label: "Current Affairs" },
     { to: "/rankings", label: "Rankings" },
     { to: "/pricing", label: "Pricing" },
