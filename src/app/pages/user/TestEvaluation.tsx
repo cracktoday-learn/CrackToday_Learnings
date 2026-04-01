@@ -224,23 +224,35 @@ export function TestEvaluation() {
   }
 
   const handleReattemptWrong = async () => {
-    if (!userAttempt?.wrong_answers || userAttempt.wrong_answers === 0) {
+    // Calculate actual wrong answers from the answers object
+    const { data: questionsData } = await supabase
+      .from('questions')
+      .select('id, correct_answer')
+      .eq('batch_id', batchId)
+      .eq('test_number', parseInt(testNumber || '1'));
+    
+    const wrongCount = (questionsData || []).filter((q: Question) => {
+      const userAnswer = userAttempt?.answers?.[q.id];
+      return userAnswer && userAnswer !== q.correct_answer;
+    }).length;
+    
+    if (wrongCount === 0) {
       toast.success('Great job! You got all questions correct!');
       return;
     }
     
     setReattemptLoading(true);
     try {
-      const { data: questionsData, error } = await supabase
+      const { data: fullQuestionsData, error } = await supabase
         .from('questions')
         .select('*')
         .eq('batch_id', batchId)
-        .eq('test_number', parseInt(testNumber || '1'));
+      .eq('test_number', parseInt(testNumber || '1'));
       
       if (error) throw error;
       
-      const wrongQs = (questionsData || []).filter((q: Question) => {
-        const userAnswer = userAttempt.answers[q.id];
+      const wrongQs = (fullQuestionsData || []).filter((q: Question) => {
+        const userAnswer = userAttempt?.answers?.[q.id];
         return userAnswer && userAnswer !== q.correct_answer;
       });
       
