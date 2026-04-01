@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { PlayCircle, Trophy, CheckCircle, FileText, ShoppingBag, Newspaper, ArrowRight, History, Target, Award } from "lucide-react";
+import { BookOpen, Trophy, Target, TrendingUp, ShoppingBag, FileText, ArrowRight, PlayCircle, Award, Zap, History, Users, CheckCircle, Newspaper } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -201,18 +201,24 @@ export function UserDashboard() {
                     <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Active</span>
                   </div>
                   <p className="text-sm text-slate-600 mb-4">{purchase.batches?.description}</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     <Link
                       to={`/test/${purchase.batch_id}`}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
                     >
-                      <PlayCircle className="h-4 w-4" /> Start Test
+                      <PlayCircle className="h-4 w-4" /> Start
+                    </Link>
+                    <Link
+                      to={`/batch/${purchase.batch_id}/live-tests`}
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Users className="h-4 w-4" /> Compete
                     </Link>
                     <Link
                       to={`/batch/${purchase.batch_id}/previous-year-papers`}
-                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
                     >
-                      <History className="h-4 w-4" /> PYQ Papers
+                      <History className="h-4 w-4" /> PYQ
                     </Link>
                   </div>
                 </div>

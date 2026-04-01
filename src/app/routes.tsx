@@ -15,6 +15,10 @@ import { Performance } from "./pages/user/Performance";
 import { Rankings } from "./pages/user/Rankings";
 import { CurrentAffairs } from "./pages/user/CurrentAffairs";
 import { PreviousYearPapers } from "./pages/user/PreviousYearPapers";
+import { LiveTestsList } from "./pages/user/LiveTestsList";
+import { LiveTestLobby } from "./pages/user/LiveTestLobby";
+import { LiveTestTake } from "./pages/user/LiveTestTake";
+import { LiveTestResults } from "./pages/user/LiveTestResults";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
@@ -77,6 +81,22 @@ export const router = createBrowserRouter([
       { path: "rankings", Component: Rankings },
       { path: "current-affairs", Component: CurrentAffairs },
       { path: "pricing", Component: Pricing },
+      {
+        path: "batch/:batchId/live-tests",
+        element: (<ProtectedRoute><LiveTestsList /></ProtectedRoute>),
+      },
+      {
+        path: "live-test/:liveTestId/lobby",
+        element: (<ProtectedRoute><LiveTestLobby /></ProtectedRoute>),
+      },
+      {
+        path: "live-test/:liveTestId/take",
+        element: (<ProtectedRoute><LiveTestTake /></ProtectedRoute>),
+      },
+      {
+        path: "live-test/:liveTestId/results",
+        element: (<ProtectedRoute><LiveTestResults /></ProtectedRoute>),
+      },
       { path: "*", Component: Home },
     ],
   },
