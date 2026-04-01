@@ -1,7 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { ArrowRight, CheckCircle, TrendingUp, Users, Award, Clock, BookOpen, Sparkles, Trophy } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { motion } from "framer-motion";
+import { supabase } from "../../../utils/supabase/client";
+
+import { User } from "@supabase/supabase-js";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -36,6 +40,23 @@ const floatingAnimation = {
 
 export function Home() {
   const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    checkUser();
+  }, []);
+
+  const handleLearnMore = () => {
+    if (user) {
+      navigate("/competition-help");
+    } else {
+      navigate("/signup?redirect=/competition-help");
+    }
+  };
   const features = [
     { icon: TrendingUp, title: "Real-time Analytics", desc: "Track your progress with detailed performance insights." },
     { icon: Users, title: "All India Rank", desc: "Compete with lakhs of aspirants nationwide." },
@@ -221,10 +242,7 @@ export function Home() {
                       Join Competition
                     </button>
                     <button 
-                      onClick={() => {
-                        console.log("Learn More clicked");
-                        window.location.href = "/competition-help";
-                      }}
+                      onClick={handleLearnMore}
                       className="px-4 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-colors text-sm cursor-pointer relative z-20"
                     >
                       Learn More

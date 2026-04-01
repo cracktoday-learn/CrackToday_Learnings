@@ -50,6 +50,9 @@ export function Login() {
         return;
       }
 
+      const params = new URLSearchParams(location.search);
+      const redirectTo = params.get("redirect") || "/dashboard";
+
       toast.success("Login successful");
 
       // Admin check (change admin email here)
@@ -58,7 +61,7 @@ export function Login() {
       if (email === adminEmail) {
         navigate("/admin");
       } else {
-        navigate("/dashboard");
+        navigate(redirectTo);
       }
 
     } catch (err) {
@@ -202,6 +205,17 @@ export function Login() {
               <Link to="/signup" className="text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors">
                 Sign up
               </Link>
+              {new URLSearchParams(location.search).get("redirect") && (
+                <span className="text-slate-400">·</span>
+              )}
+              {new URLSearchParams(location.search).get("redirect") && (
+                <Link 
+                  to={`/signup?redirect=${new URLSearchParams(location.search).get("redirect")}`}
+                  className="text-slate-500 hover:text-slate-600 text-xs"
+                >
+                  New user? Create account to continue
+                </Link>
+              )}
             </p>
           </motion.div>
 

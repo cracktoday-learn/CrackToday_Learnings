@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "../../../utils/supabase/client";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -35,6 +35,7 @@ export function Signup() {
   const [errors, setErrors] = useState<{name?: string; email?: string; password?: string}>({});
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const validateForm = () => {
     const newErrors: {name?: string; email?: string; password?: string} = {};
@@ -84,7 +85,13 @@ export function Signup() {
         toast.error(error.message);
       } else {
         toast.success("Account created successfully");
-        navigate("/login");
+        const params = new URLSearchParams(location.search);
+        const redirectTo = params.get("redirect");
+        if (redirectTo) {
+          navigate(`/login?redirect=${encodeURIComponent(redirectTo)}`);
+        } else {
+          navigate("/login");
+        }
       }
 
     } catch (error) {
@@ -300,7 +307,10 @@ export function Signup() {
           >
             <p className="text-sm text-slate-500">
               Already have an account?{" "}
-              <Link to="/login" className="text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors">
+              <Link 
+                to={`/login${new URLSearchParams(location.search).get("redirect") ? `?redirect=${new URLSearchParams(location.search).get("redirect")}` : ""}`}
+                className="text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors"
+              >
                 Sign in
               </Link>
             </p>

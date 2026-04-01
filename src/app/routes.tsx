@@ -100,7 +100,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "competition-help",
-        element: (<ProtectedRoute><CompetitionHelp /></ProtectedRoute>),
+        Component: CompetitionHelp,
       },
       { path: "*", Component: Home },
     ],
