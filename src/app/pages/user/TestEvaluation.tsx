@@ -683,9 +683,10 @@ export function TestEvaluation() {
                           
                           {/* Options */}
                           <div className="space-y-2">
-                            {['A', 'B', 'C', 'D'].map((opt) => {
+                            {(['A', 'B', 'C', 'D'] as const).map((opt) => {
                               const q = wrongQuestions[reattemptCurrentIndex];
-                              const isSelected = reattemptAnswers[q.id] === opt;
+                              const currentAnswer = reattemptAnswers[q.id];
+                              const isSelected = currentAnswer === opt;
                               return (
                                 <button
                                   key={opt}
@@ -701,11 +702,25 @@ export function TestEvaluation() {
                                   }`}>
                                     {opt}
                                   </span>
-                                  <span>{q[`option_${opt.toLowerCase()}` as keyof Question]}</span>
+                                  <span>{q[`option_${opt.toLowerCase()}` as keyof Question] as string}</span>
                                 </button>
                               );
                             })}
                           </div>
+                          
+                          {/* Clear Answer Button */}
+                          {reattemptAnswers[wrongQuestions[reattemptCurrentIndex].id] && (
+                            <button
+                              onClick={() => {
+                                const newAnswers = { ...reattemptAnswers };
+                                delete newAnswers[wrongQuestions[reattemptCurrentIndex].id];
+                                setReattemptAnswers(newAnswers);
+                              }}
+                              className="mt-2 text-sm text-slate-500 hover:text-red-600"
+                            >
+                              Clear Answer
+                            </button>
+                          )}
                         </div>
                         
                         {/* Navigation */}
@@ -728,8 +743,7 @@ export function TestEvaluation() {
                           ) : (
                             <button
                               onClick={submitReattempt}
-                              disabled={Object.keys(reattemptAnswers).length < wrongQuestions.length}
-                              className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50"
+                              className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700"
                             >
                               Submit Reattempt
                             </button>
