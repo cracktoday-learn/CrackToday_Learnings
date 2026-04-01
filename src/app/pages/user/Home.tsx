@@ -186,7 +186,6 @@ export function Home() {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
-              className="hidden lg:block"
             >
               <div className="bg-gradient-to-br from-amber-500/90 to-orange-600/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/10 relative overflow-hidden">
                 {/* Animated background */}
