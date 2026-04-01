@@ -197,38 +197,36 @@ export function Home() {
               variants={scaleIn}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ type: "spring", stiffness: 300 }}
+              className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 cursor-pointer h-full flex flex-col"
             >
-              <Link to="/dashboard" className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 cursor-pointer block h-full">
-                <motion.div 
-                  className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-6 backdrop-blur-sm"
-                  whileHover={{ rotate: 10, scale: 1.1 }}
+              <motion.div 
+                className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-6 backdrop-blur-sm"
+                whileHover={{ rotate: 10, scale: 1.1 }}
+              >
+                <Trophy className="h-6 w-6 text-white" />
+              </motion.div>
+              <h3 className="text-xl font-bold text-white mb-2">Live Competition</h3>
+              <p className="text-white/80 text-sm mb-6 flex-grow">Compete with others in real-time tests</p>
+              <div className="flex items-center justify-between mt-auto">
+                <Link 
+                  to="/dashboard"
+                  className="flex items-center text-white font-medium text-sm hover:underline"
                 >
-                  <Trophy className="h-6 w-6 text-white" />
-                </motion.div>
-                <h3 className="text-xl font-bold text-white mb-2">Live Competition</h3>
-                <p className="text-white/80 text-sm mb-6">Compete with others in real-time tests</p>
-                <div className="flex items-center justify-between">
-                  <motion.div 
-                    className="flex items-center text-white font-medium text-sm"
-                    whileHover={{ x: 5 }}
-                  >
-                    Join Now <ArrowRight className="h-4 w-4 ml-1" />
-                  </motion.div>
-                  <Link 
-                    to="/competition-help" 
-                    className="text-white/60 hover:text-white text-xs underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    How it works?
-                  </Link>
-                </div>
-                {/* Animated pulse effect */}
-                <motion.div 
-                  className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full"
-                  animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </Link>
+                  Join Now <ArrowRight className="h-4 w-4 ml-1" />
+                </Link>
+                <Link 
+                  to="/competition-help" 
+                  className="text-white/60 hover:text-white text-xs underline"
+                >
+                  How it works?
+                </Link>
+              </div>
+              {/* Animated pulse effect */}
+              <motion.div 
+                className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full"
+                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
             </motion.div>
 
             {popularExams.map((exam) => (
