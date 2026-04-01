@@ -32,6 +32,8 @@ export function Checkout() {
   const [purchasing, setPurchasing] = useState(false);
   const [alreadyPurchased, setAlreadyPurchased] = useState(false);
 
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+
   useEffect(() => {
     fetchBatch();
     checkAlreadyPurchased();
@@ -39,9 +41,17 @@ export function Checkout() {
   }, [batchId]);
 
   const loadRazorpay = () => {
+    // Check if already loaded
+    if (window.Razorpay) {
+      setRazorpayLoaded(true);
+      return;
+    }
+    
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    script.onerror = () => toast.error("Failed to load payment gateway");
     document.body.appendChild(script);
   };
 
@@ -128,6 +138,13 @@ export function Checkout() {
 
   const handlePayment = async () => {
     if (!batch) return;
+    
+    // Check if Razorpay is loaded
+    if (!window.Razorpay) {
+      toast.error("Payment gateway is loading. Please wait a moment and try again.");
+      return;
+    }
+    
     setPurchasing(true);
 
     const discountedPrice = coupon
@@ -297,10 +314,10 @@ export function Checkout() {
           {/* Pay Button */}
           <button
             onClick={handlePayment}
-            disabled={purchasing}
+            disabled={purchasing || !razorpayLoaded}
             className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-lg shadow-indigo-200"
           >
-            {purchasing ? "Opening Payment..." : discountedPrice === 0 ? "Enroll for Free!" : `Pay ₹${discountedPrice} with Razorpay`}
+            {!razorpayLoaded ? "Loading Payment Gateway..." : purchasing ? "Opening Payment..." : discountedPrice === 0 ? "Enroll for Free!" : `Pay ₹${discountedPrice} with Razorpay`}
           </button>
           <p className="text-xs text-slate-400 text-center mt-3">
             Secured by Razorpay 🔒
