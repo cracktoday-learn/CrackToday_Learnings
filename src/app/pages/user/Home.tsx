@@ -197,7 +197,7 @@ export function Home() {
               variants={scaleIn}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ type: "spring", stiffness: 300 }}
-              className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 cursor-pointer h-full flex flex-col"
+              className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 cursor-pointer block h-full"
             >
               <motion.div 
                 className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-6 backdrop-blur-sm"
@@ -206,17 +206,17 @@ export function Home() {
                 <Trophy className="h-6 w-6 text-white" />
               </motion.div>
               <h3 className="text-xl font-bold text-white mb-2">Live Competition</h3>
-              <p className="text-white/80 text-sm mb-6 flex-grow">Compete with others in real-time tests</p>
-              <div className="flex items-center justify-between mt-auto">
+              <p className="text-white/80 text-sm mb-6">Compete with others in real-time tests</p>
+              <div className="flex items-center justify-between gap-2">
                 <Link 
                   to="/dashboard"
-                  className="flex items-center text-white font-medium text-sm hover:underline"
+                  className="flex items-center text-white font-medium text-sm hover:underline whitespace-nowrap"
                 >
                   Join Now <ArrowRight className="h-4 w-4 ml-1" />
                 </Link>
                 <Link 
                   to="/competition-help" 
-                  className="text-white/60 hover:text-white text-xs underline"
+                  className="text-white/60 hover:text-white text-xs underline whitespace-nowrap"
                 >
                   How it works?
                 </Link>
