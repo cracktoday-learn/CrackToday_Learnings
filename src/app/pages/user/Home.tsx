@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, CheckCircle, TrendingUp, Users, Award, Clock, BookOpen, Sparkles, Trophy } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { motion } from "framer-motion";
@@ -35,6 +35,7 @@ const floatingAnimation = {
 };
 
 export function Home() {
+  const navigate = useNavigate();
   const features = [
     { icon: TrendingUp, title: "Real-time Analytics", desc: "Track your progress with detailed performance insights." },
     { icon: Users, title: "All India Rank", desc: "Compete with lakhs of aspirants nationwide." },
@@ -212,19 +213,19 @@ export function Home() {
                     <span className="text-white/80 text-sm">+1000 competing now</span>
                   </div>
                   
-                  <div className="flex items-center gap-3 relative z-20">
-                    <Link 
-                      to="/dashboard"
-                      className="flex-1 bg-white text-amber-600 hover:bg-amber-50 px-4 py-3 rounded-xl font-semibold text-center transition-colors relative z-20"
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => navigate("/dashboard")}
+                      className="flex-1 bg-white text-amber-600 hover:bg-amber-50 px-4 py-3 rounded-xl font-semibold text-center transition-colors"
                     >
                       Join Competition
-                    </Link>
-                    <Link 
-                      to="/competition-help" 
-                      className="px-4 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-colors text-sm relative z-20"
+                    </button>
+                    <button 
+                      onClick={() => navigate("/competition-help")}
+                      className="px-4 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-colors text-sm"
                     >
                       Learn More
-                    </Link>
+                    </button>
                   </div>
                 </div>
                 
