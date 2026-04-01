@@ -222,8 +222,8 @@ export function Home() {
                     </button>
                     <button 
                       onClick={() => {
-                        console.log("Learn More clicked, navigating to /competition-help");
-                        navigate("/competition-help");
+                        console.log("Learn More clicked");
+                        window.location.href = "/competition-help";
                       }}
                       className="px-4 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-colors text-sm cursor-pointer"
                     >
