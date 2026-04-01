@@ -224,36 +224,9 @@ export function TestEvaluation() {
   }
 
   const handleReattemptWrong = async () => {
-    console.log('Starting reattempt check...');
-    toast.info('Loading wrong questions...');
-    
-    // Calculate actual wrong answers from the answers object
-    const { data: questionsData } = await supabase
-      .from('questions')
-      .select('id, correct_answer')
-      .eq('batch_id', batchId)
-      .eq('test_number', parseInt(testNumber || '1'));
-    
-    console.log('Questions from DB:', questionsData?.length);
-    console.log('User attempt answers:', Object.keys(userAttempt?.answers || {}));
-    
-    const wrongCount = (questionsData || []).filter((q: any) => {
-      const userAnswer = userAttempt?.answers?.[q.id];
-      const isWrong = userAnswer && userAnswer !== q.correct_answer;
-      console.log(`Q ${q.id}: answered=${userAnswer}, correct=${q.correct_answer}, isWrong=${isWrong}`);
-      return isWrong;
-    }).length;
-    
-    console.log('Total wrong count:', wrongCount);
-    
-    if (wrongCount === 0) {
-      toast.success('No wrong questions found - checking answers...');
-      return;
-    }
-    
     setReattemptLoading(true);
     try {
-      const { data: fullQuestionsData, error } = await supabase
+      const { data: questionsData, error } = await supabase
         .from('questions')
         .select('*')
         .eq('batch_id', batchId)
@@ -261,22 +234,17 @@ export function TestEvaluation() {
       
       if (error) throw error;
       
-      const wrongQs = (fullQuestionsData || []).filter((q: Question) => {
-        const userAnswer = userAttempt?.answers?.[q.id];
-        return userAnswer && userAnswer !== q.correct_answer;
-      });
-      
-      if (wrongQs.length === 0) {
-        toast.success('No wrong questions found!');
-        return;
-      }
-      
-      setWrongQuestions(wrongQs);
+      // Show ALL questions for review (with answers from attempt)
+      setWrongQuestions(questionsData || []);
       setShowReattempt(true);
       setReattemptAnswers({});
       setReattemptCurrentIndex(0);
       setReattemptSubmitted(false);
       setReattemptScore({ correct: 0, wrong: 0, skipped: 0, total: 0, percentage: 0 });
+      
+      if ((questionsData || []).length === 0) {
+        toast.error('No questions found for this test');
+      }
     } catch (err) {
       toast.error('Failed to load questions');
     } finally {
