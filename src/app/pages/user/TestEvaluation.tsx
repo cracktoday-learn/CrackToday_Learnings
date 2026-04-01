@@ -66,6 +66,18 @@ export function TestEvaluation() {
   const [userRank, setUserRank] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
+  const [smartInsights, setSmartInsights] = useState<SmartInsight[]>([
+    { subject: 'Polity', lostMarks: 15, suggestion: 'Revise Fundamental Rights', severity: 'high' },
+    { subject: 'Economy', lostMarks: 8, suggestion: 'Practice Budget concepts', severity: 'medium' },
+  ]);
+  const [subjectPerformance, setSubjectPerformance] = useState<SubjectPerformance[]>([
+    { subject: 'Polity', correct: 3, total: 10, accuracy: 30 },
+    { subject: 'Economy', correct: 5, total: 8, accuracy: 62 },
+    { subject: 'History', correct: 7, total: 9, accuracy: 78 },
+    { subject: 'Geography', correct: 8, total: 10, accuracy: 80 },
+    { subject: 'Science', correct: 6, total: 8, accuracy: 75 },
+  ]);
+
   useEffect(() => {
     fetchData();
   }, [batchId, testNumber]);
@@ -190,17 +202,9 @@ export function TestEvaluation() {
     );
   }
 
-  const [smartInsights, setSmartInsights] = useState<SmartInsight[]>([
-    { subject: 'Polity', lostMarks: 15, suggestion: 'Revise Fundamental Rights', severity: 'high' },
-    { subject: 'Economy', lostMarks: 8, suggestion: 'Practice Budget concepts', severity: 'medium' },
-  ]);
-  const [subjectPerformance, setSubjectPerformance] = useState<SubjectPerformance[]>([
-    { subject: 'Polity', correct: 3, total: 10, accuracy: 30 },
-    { subject: 'Economy', correct: 5, total: 8, accuracy: 62 },
-    { subject: 'History', correct: 7, total: 9, accuracy: 78 },
-    { subject: 'Geography', correct: 8, total: 10, accuracy: 80 },
-    { subject: 'Science', correct: 6, total: 8, accuracy: 75 },
-  ]);
+  const handleReattemptWrong = () => {
+    toast.info('Reattempt feature coming soon!');
+  };
 
   const calculatePercentile = () => {
     if (allAttempts.length === 0) return 0;
@@ -227,12 +231,10 @@ export function TestEvaluation() {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  const handleReattemptWrong = () => {
-    toast.info('Reattempt feature coming soon!');
-  };
-
-  const percentage = Math.round((userAttempt?.score / userAttempt?.total_marks) * 100) || 0;
-  const isLastTest = parseInt(testNumber || "0") === batch.total_tests;
+  const percentage = userAttempt && userAttempt.total_marks > 0 
+    ? Math.round((userAttempt.score / userAttempt.total_marks) * 100) 
+    : 0;
+  const isLastTest = parseInt(testNumber || "0") === (batch?.total_tests || 0);
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
