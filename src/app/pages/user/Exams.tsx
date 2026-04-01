@@ -76,7 +76,7 @@ export function Exams() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
-          {["All", "SSC", "Banking", "UPSC", "Railways", "State PSC", "Teaching"].map((category) => (
+          {["All", "Central Exams", "State PSC Exams", "Police Exams", "Banking Exams", "Railway Exams", "Defence Exams", "Teaching Exams", "Engineering Govt Exams", "Forest Exams", "Insurance Exams"].map((category) => (
             <button 
               key={category}
               onClick={() => setSelectedCategory(category)}
