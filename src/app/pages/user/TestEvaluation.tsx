@@ -202,8 +202,14 @@ export function TestEvaluation() {
     );
   }
 
-  const handleReattemptWrong = () => {
-    toast.info('Reattempt feature coming soon!');
+  const handleReattemptWrong = async () => {
+    if (!userAttempt?.wrong_answers || userAttempt.wrong_answers === 0) {
+      toast.success('Great job! You got all questions correct!');
+      return;
+    }
+    // Navigate to test page for now
+    navigate(`/test/${batchId}`);
+    toast.success('Starting new attempt - practice makes perfect!');
   };
 
   const calculatePercentile = () => {
