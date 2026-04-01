@@ -11,6 +11,7 @@ import { TestEvaluation } from "./pages/user/TestEvaluation";
 import { Checkout } from "./pages/user/Checkout";
 import { SubscriptionCheckout } from "./pages/user/SubscriptionCheckout";
 import { Leaderboard } from "./pages/user/Leaderboard";
+import { Performance } from "./pages/user/Performance";
 import { Rankings } from "./pages/user/Rankings";
 import { CurrentAffairs } from "./pages/user/CurrentAffairs";
 import { PreviousYearPapers } from "./pages/user/PreviousYearPapers";
@@ -72,6 +73,7 @@ export const router = createBrowserRouter([
         element: (<ProtectedRoute><SubscriptionCheckout /></ProtectedRoute>),
       },
       { path: "leaderboard", Component: Leaderboard },
+      { path: "performance", element: (<ProtectedRoute><Performance /></ProtectedRoute>) },
       { path: "rankings", Component: Rankings },
       { path: "current-affairs", Component: CurrentAffairs },
       { path: "pricing", Component: Pricing },
