@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Clock, ChevronLeft, ChevronRight, Flag, CheckCircle, AlertCircle } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Flag, CheckCircle, AlertCircle, Target } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface Question {
   id: string;
@@ -278,18 +279,51 @@ export function TakeTest() {
   if (!testStarted) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-lg w-full">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">{batchName}</h1>
-          <p className="text-slate-500 mb-6">Read the instructions carefully before starting.</p>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-lg w-full"
+        >
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">{batchName}</h1>
+            <p className="text-slate-500">Test {currentTestNumber} of {totalTests}</p>
+          </div>
+
+          {/* Test Info Cards */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="bg-indigo-50 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-indigo-600">{questions.length}</p>
+              <p className="text-xs text-slate-600">Questions</p>
+            </div>
+            <div className="bg-amber-50 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-amber-600">{testDuration}</p>
+              <p className="text-xs text-slate-600">Minutes</p>
+            </div>
+            <div className="bg-emerald-50 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-emerald-600">+1</p>
+              <p className="text-xs text-slate-600">Marks</p>
+            </div>
+          </div>
+
+          {/* Difficulty & Cutoff */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 mb-6 border border-purple-100">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-purple-600" />
+                <span className="font-semibold text-slate-900">Difficulty</span>
+              </div>
+              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">Medium</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-pink-600" />
+                <span className="font-semibold text-slate-900">Expected Cutoff</span>
+              </div>
+              <span className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm font-medium">65%</span>
+            </div>
+          </div>
+
           <div className="space-y-3 mb-8">
-            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-              <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">Test {currentTestNumber}/{totalTests}</div>
-              <p className="text-sm text-slate-700">Current Test</p>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-              <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">{questions.length}</div>
-              <p className="text-sm text-slate-700">Total Questions</p>
-            </div>
             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
               <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm">+1</div>
               <p className="text-sm text-slate-700">Marks for correct answer</p>
@@ -302,9 +336,10 @@ export function TakeTest() {
               <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                 <Clock className="h-4 w-4" />
               </div>
-              <p className="text-sm text-slate-700">Time: {testDuration} minutes</p>
+              <p className="text-sm text-slate-700">Timer will auto-submit when time ends</p>
             </div>
           </div>
+
           <div className="flex gap-3">
             <button onClick={() => navigate("/dashboard")} className="flex-1 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
               Cancel
@@ -313,7 +348,7 @@ export function TakeTest() {
               Start Test
             </button>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -428,24 +463,40 @@ export function TakeTest() {
   // Test screen
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
+      {/* Header with Timer and Progress */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h1 className="text-sm font-bold text-slate-900 truncate max-w-xs">{batchName}</h1>
-            <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Test {currentTestNumber}/{totalTests}</span>
+        <div className="max-w-4xl mx-auto">
+          {/* Top Row */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-bold text-slate-900 truncate max-w-xs">{batchName}</h1>
+              <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Test {currentTestNumber}/{totalTests}</span>
+            </div>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-sm ${timeLeft <= 60 ? "bg-red-100 text-red-600 animate-pulse" : timeLeft <= 300 ? "bg-orange-100 text-orange-600" : "bg-indigo-100 text-indigo-600"}`}>
+              <Clock className="h-4 w-4" />
+              {formatTime(timeLeft)}
+            </div>
+            <button
+              onClick={() => { if (confirm("Are you sure you want to submit the test?")) handleSubmit(); }}
+              disabled={submitting}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {submitting ? "Submitting..." : "Submit Test"}
+            </button>
           </div>
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-sm ${timeLeft <= 60 ? "bg-red-100 text-red-600 animate-pulse" : timeLeft <= 300 ? "bg-orange-100 text-orange-600" : "bg-indigo-100 text-indigo-600"}`}>
-            <Clock className="h-4 w-4" />
-            {formatTime(timeLeft)}
+          
+          {/* Progress Bar */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 bg-slate-200 rounded-full h-2">
+              <div 
+                className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+              />
+            </div>
+            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
+              {currentIndex + 1} / {questions.length}
+            </span>
           </div>
-          <button
-            onClick={() => { if (confirm("Are you sure you want to submit the test?")) handleSubmit(); }}
-            disabled={submitting}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
-          >
-            {submitting ? "Submitting..." : "Submit Test"}
-          </button>
         </div>
       </div>
 
