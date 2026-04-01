@@ -212,16 +212,16 @@ export function Home() {
                     <span className="text-white/80 text-sm">+1000 competing now</span>
                   </div>
                   
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 relative z-20">
                     <Link 
                       to="/dashboard"
-                      className="flex-1 bg-white text-amber-600 hover:bg-amber-50 px-4 py-3 rounded-xl font-semibold text-center transition-colors"
+                      className="flex-1 bg-white text-amber-600 hover:bg-amber-50 px-4 py-3 rounded-xl font-semibold text-center transition-colors relative z-20"
                     >
                       Join Competition
                     </Link>
                     <Link 
                       to="/competition-help" 
-                      className="px-4 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-colors text-sm"
+                      className="px-4 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-colors text-sm relative z-20"
                     >
                       Learn More
                     </Link>
