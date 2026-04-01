@@ -224,6 +224,9 @@ export function TestEvaluation() {
   }
 
   const handleReattemptWrong = async () => {
+    console.log('Starting reattempt check...');
+    toast.info('Loading wrong questions...');
+    
     // Calculate actual wrong answers from the answers object
     const { data: questionsData } = await supabase
       .from('questions')
@@ -231,13 +234,20 @@ export function TestEvaluation() {
       .eq('batch_id', batchId)
       .eq('test_number', parseInt(testNumber || '1'));
     
-    const wrongCount = (questionsData || []).filter((q: Question) => {
+    console.log('Questions from DB:', questionsData?.length);
+    console.log('User attempt answers:', Object.keys(userAttempt?.answers || {}));
+    
+    const wrongCount = (questionsData || []).filter((q: any) => {
       const userAnswer = userAttempt?.answers?.[q.id];
-      return userAnswer && userAnswer !== q.correct_answer;
+      const isWrong = userAnswer && userAnswer !== q.correct_answer;
+      console.log(`Q ${q.id}: answered=${userAnswer}, correct=${q.correct_answer}, isWrong=${isWrong}`);
+      return isWrong;
     }).length;
     
+    console.log('Total wrong count:', wrongCount);
+    
     if (wrongCount === 0) {
-      toast.success('Great job! You got all questions correct!');
+      toast.success('No wrong questions found - checking answers...');
       return;
     }
     
@@ -247,7 +257,7 @@ export function TestEvaluation() {
         .from('questions')
         .select('*')
         .eq('batch_id', batchId)
-      .eq('test_number', parseInt(testNumber || '1'));
+        .eq('test_number', parseInt(testNumber || '1'));
       
       if (error) throw error;
       
