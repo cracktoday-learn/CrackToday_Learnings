@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle, TrendingUp, Users, Award, Clock, BookOpen, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle, TrendingUp, Users, Award, Clock, BookOpen, Sparkles, Trophy } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { motion } from "framer-motion";
 
@@ -48,6 +48,15 @@ export function Home() {
     { title: "IBPS PO", count: "1,500+ Tests", color: "bg-purple-50 text-purple-700" },
     { title: "RRB NTPC", count: "900+ Tests", color: "bg-orange-50 text-orange-700" },
   ];
+
+  // Competition card data
+  const competitionCard = {
+    title: "Live Competition",
+    count: "Compete & Win",
+    color: "bg-gradient-to-br from-amber-500 to-orange-600 text-white",
+    icon: Trophy,
+    link: "/dashboard"
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -177,12 +186,42 @@ export function Home() {
           </motion.div>
 
           <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6"
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
+            {/* Competition Card - Special Prominent Card */}
+            <motion.div
+              variants={scaleIn}
+              whileHover={{ y: -8, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Link to="/dashboard" className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 cursor-pointer block h-full">
+                <motion.div 
+                  className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-6 backdrop-blur-sm"
+                  whileHover={{ rotate: 10, scale: 1.1 }}
+                >
+                  <Trophy className="h-6 w-6 text-white" />
+                </motion.div>
+                <h3 className="text-xl font-bold text-white mb-2">Live Competition</h3>
+                <p className="text-white/80 text-sm mb-6">Compete with others in real-time tests</p>
+                <motion.div 
+                  className="flex items-center text-white font-medium text-sm"
+                  whileHover={{ x: 5 }}
+                >
+                  Join Now <ArrowRight className="h-4 w-4 ml-1" />
+                </motion.div>
+                {/* Animated pulse effect */}
+                <motion.div 
+                  className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full"
+                  animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </Link>
+            </motion.div>
+
             {popularExams.map((exam) => (
               <motion.div
                 key={exam.title}
