@@ -207,12 +207,21 @@ export function Home() {
                 </motion.div>
                 <h3 className="text-xl font-bold text-white mb-2">Live Competition</h3>
                 <p className="text-white/80 text-sm mb-6">Compete with others in real-time tests</p>
-                <motion.div 
-                  className="flex items-center text-white font-medium text-sm"
-                  whileHover={{ x: 5 }}
-                >
-                  Join Now <ArrowRight className="h-4 w-4 ml-1" />
-                </motion.div>
+                <div className="flex items-center justify-between">
+                  <motion.div 
+                    className="flex items-center text-white font-medium text-sm"
+                    whileHover={{ x: 5 }}
+                  >
+                    Join Now <ArrowRight className="h-4 w-4 ml-1" />
+                  </motion.div>
+                  <Link 
+                    to="/competition-help" 
+                    className="text-white/60 hover:text-white text-xs underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    How it works?
+                  </Link>
+                </div>
                 {/* Animated pulse effect */}
                 <motion.div 
                   className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full"

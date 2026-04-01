@@ -19,6 +19,7 @@ import { LiveTestsList } from "./pages/user/LiveTestsList";
 import { LiveTestLobby } from "./pages/user/LiveTestLobby";
 import { LiveTestTake } from "./pages/user/LiveTestTake";
 import { LiveTestResults } from "./pages/user/LiveTestResults";
+import { CompetitionHelp } from "./pages/user/CompetitionHelp";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminUsers } from "./pages/admin/Users";
 import { AdminTests } from "./pages/admin/Tests";
@@ -96,6 +97,10 @@ export const router = createBrowserRouter([
       {
         path: "live-test/:liveTestId/results",
         element: (<ProtectedRoute><LiveTestResults /></ProtectedRoute>),
+      },
+      {
+        path: "competition-help",
+        element: (<ProtectedRoute><CompetitionHelp /></ProtectedRoute>),
       },
       { path: "*", Component: Home },
     ],
