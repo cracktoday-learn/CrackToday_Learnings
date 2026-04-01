@@ -85,7 +85,7 @@ export function TestEvaluation() {
   const [reattemptAnswers, setReattemptAnswers] = useState<Record<string, string>>({});
   const [reattemptCurrentIndex, setReattemptCurrentIndex] = useState(0);
   const [reattemptSubmitted, setReattemptSubmitted] = useState(false);
-  const [reattemptScore, setReattemptScore] = useState({ correct: 0, total: 0, percentage: 0 });
+  const [reattemptScore, setReattemptScore] = useState({ correct: 0, wrong: 0, skipped: 0, total: 0, percentage: 0 });
 
   const [smartInsights, setSmartInsights] = useState<SmartInsight[]>([
     { subject: 'Polity', lostMarks: 15, suggestion: 'Revise Fundamental Rights', severity: 'high' },
@@ -254,7 +254,7 @@ export function TestEvaluation() {
       setReattemptAnswers({});
       setReattemptCurrentIndex(0);
       setReattemptSubmitted(false);
-      setReattemptScore({ correct: 0, total: 0, percentage: 0 });
+      setReattemptScore({ correct: 0, wrong: 0, skipped: 0, total: 0, percentage: 0 });
     } catch (err) {
       toast.error('Failed to load questions');
     } finally {
@@ -268,15 +268,24 @@ export function TestEvaluation() {
 
   const submitReattempt = () => {
     let correct = 0;
+    let wrong = 0;
+    let skipped = 0;
+    
     wrongQuestions.forEach(q => {
-      if (reattemptAnswers[q.id] === q.correct_answer) {
+      const userAnswer = reattemptAnswers[q.id];
+      if (!userAnswer) {
+        skipped++;
+      } else if (userAnswer === q.correct_answer) {
         correct++;
+      } else {
+        wrong++;
       }
     });
+    
     const percentage = Math.round((correct / wrongQuestions.length) * 100);
-    setReattemptScore({ correct, total: wrongQuestions.length, percentage });
+    setReattemptScore({ correct, wrong, skipped, total: wrongQuestions.length, percentage });
     setReattemptSubmitted(true);
-    toast.success(`Reattempt completed! You got ${correct}/${wrongQuestions.length} correct`);
+    toast.success(`Reattempt completed! Correct: ${correct}, Wrong: ${wrong}, Skipped: ${skipped}`);
   };
 
   const closeReattempt = () => {
@@ -626,9 +635,26 @@ export function TestEvaluation() {
                     </motion.div>
                     <h3 className="text-3xl font-bold text-slate-900 mb-2">{reattemptScore.percentage}%</h3>
                     <p className="text-lg text-slate-600 mb-4">
-                      You got {reattemptScore.correct} out of {reattemptScore.total} correct
+                      Reattempt Results
                     </p>
-                    <div className="bg-slate-50 rounded-xl p-4 mb-6">
+                    
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
+                        <p className="text-2xl font-bold text-emerald-600">{reattemptScore.correct}</p>
+                        <p className="text-xs text-slate-600">Correct</p>
+                      </div>
+                      <div className="bg-red-50 rounded-xl p-3 border border-red-200">
+                        <p className="text-2xl font-bold text-red-600">{reattemptScore.wrong}</p>
+                        <p className="text-xs text-slate-600">Wrong</p>
+                      </div>
+                      <div className="bg-slate-100 rounded-xl p-3 border border-slate-200">
+                        <p className="text-2xl font-bold text-slate-600">{reattemptScore.skipped}</p>
+                        <p className="text-xs text-slate-600">Skipped</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-slate-50 rounded-xl p-4">
                       <p className="text-sm text-slate-600">
                         {reattemptScore.percentage >= 70 
                           ? 'Great improvement! Keep practicing to maintain this score.' 
