@@ -181,7 +181,7 @@ export function Home() {
               <div className="bg-gradient-to-br from-amber-500/90 to-orange-600/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/10 relative overflow-hidden">
                 {/* Animated background */}
                 <motion.div 
-                  className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-orange-500/20"
+                  className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-orange-500/20 pointer-events-none"
                   animate={{ rotate: [0, 360] }}
                   transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                   style={{ transformOrigin: "center" }}
