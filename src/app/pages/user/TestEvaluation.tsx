@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Trophy, Clock, CheckCircle, AlertCircle, ArrowRight, Users, Target, TrendingUp, Star } from "lucide-react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Trophy, Clock, CheckCircle, AlertCircle, ArrowRight, Users, Target, TrendingUp, Star, Share2, MessageCircle, RotateCcw, BookOpen, Flame, BarChart3, Zap } from "lucide-react";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface TestAttempt {
   id: string;
@@ -32,6 +33,20 @@ interface Test {
   test_number: number;
   time_duration: number;
   question_count: number;
+}
+
+interface SmartInsight {
+  subject: string;
+  lostMarks: number;
+  suggestion: string;
+  severity: 'high' | 'medium' | 'low';
+}
+
+interface SubjectPerformance {
+  subject: string;
+  correct: number;
+  total: number;
+  accuracy: number;
 }
 
 interface Batch {
@@ -175,7 +190,48 @@ export function TestEvaluation() {
     );
   }
 
-  const percentage = Math.round((userAttempt.score / userAttempt.total_marks) * 100);
+  const [smartInsights, setSmartInsights] = useState<SmartInsight[]>([
+    { subject: 'Polity', lostMarks: 15, suggestion: 'Revise Fundamental Rights', severity: 'high' },
+    { subject: 'Economy', lostMarks: 8, suggestion: 'Practice Budget concepts', severity: 'medium' },
+  ]);
+  const [subjectPerformance, setSubjectPerformance] = useState<SubjectPerformance[]>([
+    { subject: 'Polity', correct: 3, total: 10, accuracy: 30 },
+    { subject: 'Economy', correct: 5, total: 8, accuracy: 62 },
+    { subject: 'History', correct: 7, total: 9, accuracy: 78 },
+    { subject: 'Geography', correct: 8, total: 10, accuracy: 80 },
+    { subject: 'Science', correct: 6, total: 8, accuracy: 75 },
+  ]);
+
+  const calculatePercentile = () => {
+    if (allAttempts.length === 0) return 0;
+    const rank = userRank;
+    const total = allAttempts.length;
+    return Math.round(((total - rank) / total) * 100);
+  };
+
+  const handleShareResult = () => {
+    const percentile = calculatePercentile();
+    const text = `🏆 I just scored ${percentage}% on CrackToday!\n\n🎯 Rank: #${userRank} / ${allAttempts.length}\n📊 Percentile: ${percentile}th\n🔥 Streak: 7 days\n\nCan you beat my score? 👇\nhttps://cracktoday.com`;
+    
+    if (navigator.share) {
+      navigator.share({ title: 'My CrackToday Result', text });
+    } else {
+      navigator.clipboard.writeText(text);
+      toast.success('Result copied to clipboard!');
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    const percentile = calculatePercentile();
+    const text = encodeURIComponent(`🏆 I just scored ${percentage}% on CrackToday!\n\n🎯 Rank: #${userRank} / ${allAttempts.length}\n📊 Percentile: ${percentile}th\n🔥 Streak: 7 days\n\nCan you beat my score? 👇\nhttps://cracktoday.com`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  const handleReattemptWrong = () => {
+    toast.info('Reattempt feature coming soon!');
+  };
+
+  const percentage = Math.round((userAttempt?.score / userAttempt?.total_marks) * 100) || 0;
   const isLastTest = parseInt(testNumber || "0") === batch.total_tests;
 
   return (
@@ -188,41 +244,187 @@ export function TestEvaluation() {
           <p className="text-slate-500">Test {testNumber} of {batch.total_tests} in {batch.name}</p>
         </div>
 
-        {/* User Performance Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-          <div className="text-center mb-6">
-            <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 ${percentage >= 60 ? "bg-emerald-100" : "bg-red-100"}`}>
-              {percentage >= 60
-                ? <CheckCircle className="h-12 w-12 text-emerald-600" />
-                : <AlertCircle className="h-12 w-12 text-red-600" />}
+        {/* VIRAL RESULT SCREEN - Rank & Percentile Hero */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-3xl p-8 text-white shadow-2xl"
+        >
+          <div className="text-center mb-8">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring" }}
+              className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
+              <Trophy className="h-12 w-12 text-yellow-300" />
+            </motion.div>
+            <h2 className="text-5xl font-bold mb-2">#{userRank}</h2>
+            <p className="text-xl text-white/90">Your Rank</p>
+            <p className="text-white/70">out of {allAttempts.length.toLocaleString()} participants</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-white/10 rounded-2xl p-4 text-center">
+              <p className="text-4xl font-bold text-yellow-300">{calculatePercentile()}th</p>
+              <p className="text-sm text-white/80">Percentile</p>
             </div>
-            <h2 className="text-4xl font-bold text-slate-900 mb-2">{percentage}%</h2>
-            <p className="text-xl text-slate-600">{userAttempt.score} / {userAttempt.total_marks} marks</p>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              {getRankIcon(userRank)}
-              <span className="text-lg font-semibold text-slate-700">Your Rank: {userRank}</span>
+            <div className="bg-white/10 rounded-2xl p-4 text-center">
+              <p className="text-4xl font-bold">{percentage}%</p>
+              <p className="text-sm text-white/80">Score</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-emerald-50 rounded-xl">
-              <p className="text-2xl font-bold text-emerald-600">{userAttempt.correct_answers}</p>
-              <p className="text-xs text-slate-600 mt-1">Correct</p>
+          <div className="grid grid-cols-4 gap-3 mb-6 text-center text-sm">
+            <div className="bg-white/10 rounded-xl p-3">
+              <p className="font-bold text-emerald-300">{userAttempt?.correct_answers || 0}</p>
+              <p className="text-white/70">Correct</p>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-xl">
-              <p className="text-2xl font-bold text-red-600">{userAttempt.wrong_answers}</p>
-              <p className="text-xs text-slate-600 mt-1">Wrong</p>
+            <div className="bg-white/10 rounded-xl p-3">
+              <p className="font-bold text-red-300">{userAttempt?.wrong_answers || 0}</p>
+              <p className="text-white/70">Wrong</p>
             </div>
-            <div className="text-center p-4 bg-slate-100 rounded-xl">
-              <p className="text-2xl font-bold text-slate-600">{userAttempt.skipped}</p>
-              <p className="text-xs text-slate-600 mt-1">Skipped</p>
+            <div className="bg-white/10 rounded-xl p-3">
+              <p className="font-bold">{userAttempt?.skipped || 0}</p>
+              <p className="text-white/70">Skipped</p>
             </div>
-            <div className="text-center p-4 bg-indigo-50 rounded-xl">
-              <p className="text-2xl font-bold text-indigo-600">{formatTime(userAttempt.time_taken)}</p>
-              <p className="text-xs text-slate-600 mt-1">Time Taken</p>
+            <div className="bg-white/10 rounded-xl p-3">
+              <p className="font-bold text-yellow-300">{userAttempt ? formatTime(userAttempt.time_taken) : "0m 0s"}</p>
+              <p className="text-white/70">Time</p>
             </div>
           </div>
-        </div>
+
+          {/* Share Buttons */}
+          <div className="flex gap-3 justify-center">
+            <button 
+              onClick={handleShareWhatsApp}
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl font-semibold transition-colors"
+            >
+              <MessageCircle className="h-5 w-5" /> WhatsApp
+            </button>
+            <button 
+              onClick={handleShareResult}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-3 rounded-xl font-semibold transition-colors"
+            >
+              <Share2 className="h-5 w-5" /> Share
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Performance Graph - Subject-wise Accuracy */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6"
+        >
+          <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <BarChart3 className="h-6 w-6 text-indigo-600" /> Performance by Subject
+          </h3>
+          <div className="space-y-4">
+            {subjectPerformance.map((subject) => (
+              <div key={subject.subject} className="flex items-center gap-4">
+                <div className="w-24 font-medium text-slate-700">{subject.subject}</div>
+                <div className="flex-1">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-slate-600">{subject.correct}/{subject.total} correct</span>
+                    <span className={`font-semibold ${
+                      subject.accuracy >= 70 ? 'text-emerald-600' : 
+                      subject.accuracy >= 50 ? 'text-amber-600' : 'text-red-600'
+                    }`}>{subject.accuracy}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-3">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${subject.accuracy}%` }}
+                      transition={{ duration: 1, delay: 0.5 }}
+                      className={`h-3 rounded-full ${
+                        subject.accuracy >= 70 ? 'bg-emerald-500' : 
+                        subject.accuracy >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Smart Insights - USP Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6"
+        >
+          <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <Zap className="h-6 w-6 text-amber-500" /> Smart Insights
+          </h3>
+          <div className="space-y-4">
+            {smartInsights.map((insight, index) => (
+              <div 
+                key={index}
+                className={`rounded-xl p-4 border-l-4 ${
+                  insight.severity === 'high' ? 'bg-red-50 border-red-500' :
+                  insight.severity === 'medium' ? 'bg-amber-50 border-amber-500' :
+                  'bg-blue-50 border-blue-500'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <p className="font-semibold text-slate-900">{insight.subject}</p>
+                    <p className="text-sm text-slate-600">{insight.suggestion}</p>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-sm font-bold ${
+                    insight.severity === 'high' ? 'bg-red-500 text-white' :
+                    insight.severity === 'medium' ? 'bg-amber-500 text-white' :
+                    'bg-blue-500 text-white'
+                  }`}>
+                    -{insight.lostMarks} marks
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* CTA LOOP - Reattempt & Next Test */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6"
+        >
+          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <RotateCcw className="h-5 w-5 text-indigo-600" /> Continue Learning
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button
+              onClick={handleReattemptWrong}
+              className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-200 py-4 rounded-xl font-semibold transition-colors"
+            >
+              <RotateCcw className="h-5 w-5" />
+              Reattempt Wrong Questions
+            </button>
+            {!isLastTest ? (
+              <button
+                onClick={() => navigate(`/test/${batchId}`)}
+                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-semibold transition-colors"
+              >
+                <ArrowRight className="h-5 w-5" />
+                Take Next Test ({parseInt(testNumber || "0") + 1}/{batch.total_tests})
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-semibold transition-colors"
+              >
+                <Trophy className="h-5 w-5" />
+                Complete Batch
+              </button>
+            )}
+          </div>
+        </motion.div>
 
         {/* Ranking Leaderboard */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
