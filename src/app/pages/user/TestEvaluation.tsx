@@ -144,17 +144,27 @@ export function TestEvaluation() {
       // Recalculate metrics from actual answers
       if (userAttemptData && questionsData) {
         let correct = 0, wrong = 0, skipped = 0;
+        console.log('Recalculating metrics...');
+        console.log('Questions count:', questionsData.length);
+        console.log('User answers:', userAttemptData.answers);
         questionsData.forEach((q: Question) => {
           const answer = userAttemptData.answers?.[q.id];
+          console.log(`Q ${q.id}: answer="${answer}", correct="${q.correct_answer}"`);
           if (!answer || answer === "") {
             skipped++;
+            console.log('  -> SKIPPED');
           } else if (answer === q.correct_answer) {
             correct++;
+            console.log('  -> CORRECT');
           } else {
             wrong++;
+            console.log('  -> WRONG');
           }
         });
+        console.log(`Final: correct=${correct}, wrong=${wrong}, skipped=${skipped}`);
         setCalculatedMetrics({ correct, wrong, skipped });
+      } else {
+        console.log('Missing data for recalculation:', { hasAttempt: !!userAttemptData, hasQuestions: !!questionsData, questionsCount: questionsData?.length });
       }
       }
 
