@@ -289,16 +289,27 @@ export function TestEvaluation() {
       
       if (error) throw error;
       
-      // Show ALL questions for review (with answers from attempt)
-      setWrongQuestions(questionsData || []);
+      // Filter to only include multiple choice questions with all 4 options
+      // Exclude true/false questions that only have 2 options
+      const multipleChoiceQuestions = (questionsData || []).filter(q => 
+        q.option_a && q.option_b && q.option_c && q.option_d &&
+        q.option_a.trim() !== '' && q.option_b.trim() !== '' && 
+        q.option_c.trim() !== '' && q.option_d.trim() !== ''
+      );
+      
+      console.log('Total questions:', questionsData?.length);
+      console.log('Multiple choice questions:', multipleChoiceQuestions.length);
+      
+      // Show only multiple choice questions for reattempt
+      setWrongQuestions(multipleChoiceQuestions);
       setShowReattempt(true);
       setReattemptAnswers({});
       setReattemptCurrentIndex(0);
       setReattemptSubmitted(false);
       setReattemptScore({ correct: 0, wrong: 0, skipped: 0, total: 0, percentage: 0 });
       
-      if ((questionsData || []).length === 0) {
-        toast.error('No questions found for this test');
+      if (multipleChoiceQuestions.length === 0) {
+        toast.error('No multiple choice questions available for reattempt');
       }
     } catch (err) {
       toast.error('Failed to load questions');
