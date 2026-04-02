@@ -140,6 +140,7 @@ export function TakeTest() {
       const timeTaken = testDuration * 60 - timeLeft;
 
       // Save test attempt for current test
+      console.log('Submitting test with answers:', answers);
       const { error } = await supabase.from("test_attempts").insert({
         user_id: user?.id,
         batch_id: batchId,
