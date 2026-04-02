@@ -127,14 +127,31 @@ export function TestEvaluation() {
           .eq("batch_id", batchId)
           .eq("test_number", parseInt(testNumber))
           .eq("user_id", user.id)
+          .order("completed_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         if (userAttemptError) {
           console.error("User attempt fetch error:", userAttemptError);
         }
+        
+        // Parse answers if it's a string (Supabase jsonb sometimes returns as string)
+        let parsedAnswers = userAttemptData?.answers || {};
+        if (typeof parsedAnswers === 'string') {
+          try {
+            parsedAnswers = JSON.parse(parsedAnswers);
+          } catch {
+            parsedAnswers = {};
+          }
+        }
+        
         console.log('Raw user attempt data from Supabase:', JSON.stringify(userAttemptData, null, 2));
-        console.log('Answers field:', userAttemptData?.answers);
-        console.log('Answers type:', typeof userAttemptData?.answers);
+        console.log('Parsed answers:', parsedAnswers);
+        
+        // Store parsed answers back into the data object
+        if (userAttemptData) {
+          userAttemptData.answers = parsedAnswers;
+        }
+        
         setUserAttempt(userAttemptData);
       // Fetch test questions to recalculate metrics
       const { data: questionsData } = await supabase
