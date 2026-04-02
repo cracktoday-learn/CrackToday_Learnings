@@ -132,6 +132,9 @@ export function TestEvaluation() {
         if (userAttemptError) {
           console.error("User attempt fetch error:", userAttemptError);
         }
+        console.log('Raw user attempt data from Supabase:', JSON.stringify(userAttemptData, null, 2));
+        console.log('Answers field:', userAttemptData?.answers);
+        console.log('Answers type:', typeof userAttemptData?.answers);
         setUserAttempt(userAttemptData);
       // Fetch test questions to recalculate metrics
       const { data: questionsData } = await supabase
