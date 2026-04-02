@@ -289,12 +289,10 @@ export function TestEvaluation() {
       
       if (error) throw error;
       
-      // Filter to only include multiple choice questions with all 4 options
-      // Exclude true/false questions that only have 2 options
+      // Filter to only include multiple choice questions (type === "mcq")
+      // Exclude true/false questions
       const multipleChoiceQuestions = (questionsData || []).filter(q => 
-        q.option_a && q.option_b && q.option_c && q.option_d &&
-        q.option_a.trim() !== '' && q.option_b.trim() !== '' && 
-        q.option_c.trim() !== '' && q.option_d.trim() !== ''
+        q.type === "mcq" || (q.option_c && q.option_d && q.option_c.trim() !== '' && q.option_d.trim() !== '')
       );
       
       console.log('Total questions:', questionsData?.length);
