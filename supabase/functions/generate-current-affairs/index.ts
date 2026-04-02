@@ -103,7 +103,6 @@ serve(async (req) => {
 async function generateCurrentAffairs(): Promise<CurrentAffair[]> {
   const key = Deno.env.get("GROQ_API_KEY");
   console.log("GROQ_API_KEY present:", !!key);
-  console.log("GROQ_API_KEY length:", key?.length);
   
   if (!key) {
     throw new Error("GROQ_API_KEY environment variable not set");
@@ -131,51 +130,55 @@ async function generateCurrentAffairs(): Promise<CurrentAffair[]> {
     
     Make it factually accurate and exam-relevant. Only return the JSON, no other text.`;
 
-    try {
-      console.log(`Calling Groq API for topic: ${topic}`);
-      
-      const requestBody = {
-        model: "llama-3.1-8b-instant",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert in UPSC/SSC/Competitive exam current affairs. Generate factual, exam-relevant news with specific names, dates, numbers, and policy details in valid JSON format."
+    // Retry logic for transient network errors
+    let retries = 3;
+    let success = false;
+    
+    while (retries > 0 && !success) {
+      try {
+        console.log(`Calling Groq API for topic: ${topic} (attempt ${4 - retries}/3)`);
+        
+        const requestBody = {
+          model: "llama-3.1-8b-instant",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert in UPSC/SSC/Competitive exam current affairs. Generate factual, exam-relevant news with specific names, dates, numbers, and policy details in valid JSON format."
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 500,
+        };
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
+        const response = await fetch(GROQ_API_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${key}`,
+            "Content-Type": "application/json",
           },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 500,
-      };
-      
-      console.log("Request body:", JSON.stringify(requestBody));
-      
-      const response = await fetch(GROQ_API_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
 
-      console.log(`Groq API response status: ${response.status}`);
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'No error details');
+          console.error(`Groq API error ${response.status}: ${errorText}`);
+          throw new Error(`API error: ${response.status}`);
+        }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Groq API error ${response.status}: ${errorText}`);
-        continue;
-      }
+        const result = await response.json();
+        const content = result.choices[0]?.message?.content;
 
-      const result = await response.json();
-      console.log(`Groq API result for ${topic}:`, JSON.stringify(result).slice(0, 200));
-      
-      const content = result.choices[0]?.message?.content;
-
-      if (content) {
-        try {
+        if (content) {
           const jsonMatch = content.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
@@ -186,18 +189,25 @@ async function generateCurrentAffairs(): Promise<CurrentAffair[]> {
               date: currentDate,
               source_url: `https://www.google.com/search?q=${encodeURIComponent(parsed.title)}`,
             });
-            console.log(`Successfully added affair: ${parsed.title}`);
+            console.log(`✓ Successfully added: ${parsed.title}`);
+            success = true;
           }
-        } catch (parseError) {
-          console.error("Failed to parse JSON:", parseError);
-          console.error("Raw content:", content);
+        }
+      } catch (error) {
+        retries--;
+        console.error(`Error for ${topic}: ${error.message}. Retries left: ${retries}`);
+        if (retries > 0) {
+          // Wait 2 seconds before retry
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
-    } catch (error) {
-      console.error(`Error generating affair for ${topic}:`, error);
+    }
+    
+    if (!success) {
+      console.error(`Failed to generate affair for ${topic} after 3 attempts`);
     }
   }
 
-  console.log(`Total affairs generated: ${affairs.length}`);
+  console.log(`Total affairs generated: ${affairs.length}/${NEWS_TOPICS.length}`);
   return affairs;
 }
