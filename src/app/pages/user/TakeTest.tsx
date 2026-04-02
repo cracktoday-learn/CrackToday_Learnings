@@ -140,8 +140,18 @@ export function TakeTest() {
       const timeTaken = testDuration * 60 - timeLeft;
 
       // Save test attempt for current test
-      console.log('Submitting test with answers:', answers);
-      const { error } = await supabase.from("test_attempts").insert({
+      console.log('Submitting test with answers:', JSON.stringify(answers, null, 2));
+      console.log('Full submission data:', {
+        user_id: user?.id,
+        batch_id: batchId,
+        test_number: currentTestNumber,
+        score,
+        correct_answers: correct,
+        wrong_answers: wrong,
+        skipped,
+        answers
+      });
+      const { data, error } = await supabase.from("test_attempts").insert({
         user_id: user?.id,
         batch_id: batchId,
         test_number: currentTestNumber,
@@ -152,9 +162,14 @@ export function TakeTest() {
         skipped,
         time_taken: timeTaken,
         answers,
-      });
+      }).select();
 
-      if (error) throw error;
+      console.log('Insert response data:', JSON.stringify(data, null, 2));
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw error;
+      }
+      console.log('Test submitted successfully, returned data:', data);
 
       // Add current test to completed tests
       const newCompletedTests = [...completedTests, currentTestNumber];
