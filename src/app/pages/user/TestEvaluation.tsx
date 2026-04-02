@@ -86,6 +86,8 @@ export function TestEvaluation() {
   const [reattemptCurrentIndex, setReattemptCurrentIndex] = useState(0);
   const [reattemptSubmitted, setReattemptSubmitted] = useState(false);
   const [reattemptScore, setReattemptScore] = useState({ correct: 0, wrong: 0, skipped: 0, total: 0, percentage: 0 });
+  const [testQuestions, setTestQuestions] = useState<Question[]>([]);
+  const [calculatedMetrics, setCalculatedMetrics] = useState({ correct: 0, wrong: 0, skipped: 0 });
 
   const [smartInsights, setSmartInsights] = useState<SmartInsight[]>([
     { subject: 'Polity', lostMarks: 15, suggestion: 'Revise Fundamental Rights', severity: 'high' },
@@ -131,6 +133,29 @@ export function TestEvaluation() {
           console.error("User attempt fetch error:", userAttemptError);
         }
         setUserAttempt(userAttemptData);
+      // Fetch test questions to recalculate metrics
+      const { data: questionsData } = await supabase
+        .from("questions")
+        .select("*")
+        .eq("batch_id", batchId)
+        .eq("test_number", parseInt(testNumber));
+      setTestQuestions(questionsData || []);
+
+      // Recalculate metrics from actual answers
+      if (userAttemptData && questionsData) {
+        let correct = 0, wrong = 0, skipped = 0;
+        questionsData.forEach((q: Question) => {
+          const answer = userAttemptData.answers?.[q.id];
+          if (!answer || answer === "") {
+            skipped++;
+          } else if (answer === q.correct_answer) {
+            correct++;
+          } else {
+            wrong++;
+          }
+        });
+        setCalculatedMetrics({ correct, wrong, skipped });
+      }
       }
 
       // Fetch all attempts for ranking
@@ -370,15 +395,15 @@ export function TestEvaluation() {
 
           <div className="grid grid-cols-4 gap-3 mb-6 text-center text-sm">
             <div className="bg-white/10 rounded-xl p-3">
-              <p className="font-bold text-emerald-300">{userAttempt?.correct_answers || 0}</p>
+              <p className="font-bold text-emerald-300">{calculatedMetrics.correct}</p>
               <p className="text-white/70">Correct</p>
             </div>
             <div className="bg-white/10 rounded-xl p-3">
-              <p className="font-bold text-red-300">{userAttempt?.wrong_answers || 0}</p>
+              <p className="font-bold text-red-300">{calculatedMetrics.wrong}</p>
               <p className="text-white/70">Wrong</p>
             </div>
             <div className="bg-white/10 rounded-xl p-3">
-              <p className="font-bold">{userAttempt?.skipped || 0}</p>
+              <p className="font-bold">{calculatedMetrics.skipped}</p>
               <p className="text-white/70">Skipped</p>
             </div>
             <div className="bg-white/10 rounded-xl p-3">
