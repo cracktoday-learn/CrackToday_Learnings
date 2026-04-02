@@ -289,25 +289,16 @@ export function TestEvaluation() {
       
       if (error) throw error;
       
-      // Filter to only include multiple choice questions (type === "mcq")
-      // Exclude true/false questions
-      const multipleChoiceQuestions = (questionsData || []).filter(q => 
-        q.type === "mcq" || (q.option_c && q.option_d && q.option_c.trim() !== '' && q.option_d.trim() !== '')
-      );
-      
-      console.log('Total questions:', questionsData?.length);
-      console.log('Multiple choice questions:', multipleChoiceQuestions.length);
-      
-      // Show only multiple choice questions for reattempt
-      setWrongQuestions(multipleChoiceQuestions);
+      // Show all questions for reattempt - options will be rendered dynamically
+      setWrongQuestions(questionsData || []);
       setShowReattempt(true);
       setReattemptAnswers({});
       setReattemptCurrentIndex(0);
       setReattemptSubmitted(false);
       setReattemptScore({ correct: 0, wrong: 0, skipped: 0, total: 0, percentage: 0 });
       
-      if (multipleChoiceQuestions.length === 0) {
-        toast.error('No multiple choice questions available for reattempt');
+      if ((questionsData || []).length === 0) {
+        toast.error('No questions found for this test');
       }
     } catch (err) {
       toast.error('Failed to load questions');
@@ -747,31 +738,40 @@ export function TestEvaluation() {
                             {wrongQuestions[reattemptCurrentIndex].question}
                           </p>
                           
-                          {/* Options */}
+                          {/* Options - dynamically render based on available options */}
                           <div className="space-y-2">
-                            {(['A', 'B', 'C', 'D'] as const).map((opt) => {
+                            {(() => {
                               const q = wrongQuestions[reattemptCurrentIndex];
-                              const currentAnswer = reattemptAnswers[q.id];
-                              const isSelected = currentAnswer === opt;
-                              return (
-                                <button
-                                  key={opt}
-                                  onClick={() => handleReattemptAnswer(q.id, opt)}
-                                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
-                                    isSelected
-                                      ? 'bg-indigo-600 text-white border-indigo-600'
-                                      : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
-                                  }`}
-                                >
-                                  <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                                    isSelected ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-600'
-                                  }`}>
-                                    {opt}
-                                  </span>
-                                  <span>{q[`option_${opt.toLowerCase()}` as keyof Question] as string}</span>
-                                </button>
-                              );
-                            })}
+                              // Determine available options based on question data
+                              const availableOptions = ['A', 'B', 'C', 'D'].filter(opt => {
+                                const optionValue = q[`option_${opt.toLowerCase()}` as keyof Question] as string;
+                                return optionValue && optionValue.trim() !== '';
+                              });
+                              
+                              return availableOptions.map((opt) => {
+                                const currentAnswer = reattemptAnswers[q.id];
+                                const isSelected = currentAnswer === opt;
+                                const optionText = q[`option_${opt.toLowerCase()}` as keyof Question] as string;
+                                return (
+                                  <button
+                                    key={opt}
+                                    onClick={() => handleReattemptAnswer(q.id, opt)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                                      isSelected
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                                    }`}
+                                  >
+                                    <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                      isSelected ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-600'
+                                    }`}>
+                                      {opt}
+                                    </span>
+                                    <span>{optionText}</span>
+                                  </button>
+                                );
+                              });
+                            })()}
                           </div>
                           
                           {/* Clear Answer Button */}
