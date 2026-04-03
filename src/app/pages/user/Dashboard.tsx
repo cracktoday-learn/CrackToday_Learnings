@@ -187,17 +187,17 @@ export function UserDashboard() {
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-4 mb-6 text-sm">
-            <div className="bg-white/10 rounded-lg p-3">
-              <p className="text-white/70 mb-1">Difficulty</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 text-sm">
+            <div className="bg-white/10 rounded-lg p-2 sm:p-3">
+              <p className="text-white/70 mb-1 text-xs sm:text-sm">Difficulty</p>
               <p className="font-semibold">Hard</p>
             </div>
-            <div className="bg-white/10 rounded-lg p-3">
-              <p className="text-white/70 mb-1">Expected Cutoff</p>
+            <div className="bg-white/10 rounded-lg p-2 sm:p-3">
+              <p className="text-white/70 mb-1 text-xs sm:text-sm">Expected Cutoff</p>
               <p className="font-semibold">40%</p>
             </div>
-            <div className="bg-white/10 rounded-lg p-3">
-              <p className="text-white/70 mb-1">Questions</p>
+            <div className="bg-white/10 rounded-lg p-2 sm:p-3 col-span-2 sm:col-span-1">
+              <p className="text-white/70 mb-1 text-xs sm:text-sm">Questions</p>
               <p className="font-semibold">20</p>
             </div>
           </div>
@@ -353,24 +353,24 @@ export function UserDashboard() {
       </motion.div>
 
       {/* Current Affairs Quick Link */}
-      <div className="mb-6">
+      <div className="mb-8">
         <Link
           to="/current-affairs"
-          className="flex items-center gap-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+          className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-5 sm:p-6 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
         >
-          <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center">
-            <Newspaper className="h-7 w-7" />
+          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <Newspaper className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
-          <div className="flex-1">
-            <h3 className="text-xl font-bold">Current Affairs</h3>
-            <p className="text-white/80">Stay updated with the latest news and events</p>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg sm:text-xl font-bold">Current Affairs</h3>
+            <p className="text-white/80 text-sm sm:text-base">Stay updated with the latest news and events</p>
           </div>
-          <ArrowRight className="h-6 w-6" />
+          <ArrowRight className="h-6 w-6 shrink-0" />
         </Link>
       </div>
 
       {/* Purchased Batches Only */}
-      <section className="max-w-2xl">
+      <section className="w-full">
         <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
           <ShoppingBag className="h-5 w-5 text-indigo-600" /> My Enrolled Batches
         </h2>
@@ -384,12 +384,12 @@ export function UserDashboard() {
           <div className="space-y-4">
             {purchases.map((purchase) => (
               <div key={purchase.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:border-indigo-200 transition-colors">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                  <div className="min-w-0">
                     <h3 className="font-semibold text-slate-900">{purchase.batches?.name}</h3>
                     <p className="text-xs text-slate-500 mt-1">{purchase.batches?.exam_type} • {purchase.batches?.total_tests} tests</p>
                   </div>
-                  <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Active</span>
+                  <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full shrink-0">Active</span>
                 </div>
                 <p className="text-sm text-slate-600 mb-4">{purchase.batches?.description}</p>
                 <div className="grid grid-cols-3 gap-2 relative z-10">
