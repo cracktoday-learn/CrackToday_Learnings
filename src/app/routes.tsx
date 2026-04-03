@@ -14,6 +14,7 @@ import { Leaderboard } from "./pages/user/Leaderboard";
 import { Performance } from "./pages/user/Performance";
 import { Rankings } from "./pages/user/Rankings";
 import { CurrentAffairs } from "./pages/user/CurrentAffairs";
+import { DailyChallenge } from "./pages/user/DailyChallenge";
 import { PreviousYearPapers } from "./pages/user/PreviousYearPapers";
 import { LiveTestsList } from "./pages/user/LiveTestsList";
 import { LiveTestLobby } from "./pages/user/LiveTestLobby";
@@ -81,6 +82,7 @@ export const router = createBrowserRouter([
       { path: "performance", element: (<ProtectedRoute><Performance /></ProtectedRoute>) },
       { path: "rankings", Component: Rankings },
       { path: "current-affairs", Component: CurrentAffairs },
+      { path: "daily-challenge", element: (<ProtectedRoute><DailyChallenge /></ProtectedRoute>) },
       { path: "pricing", Component: Pricing },
       {
         path: "batch/:batchId/live-tests",

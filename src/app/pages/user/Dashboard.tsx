@@ -195,20 +195,20 @@ export function UserDashboard() {
           <div className="grid grid-cols-3 gap-4 mb-6 text-sm">
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-white/70 mb-1">Difficulty</p>
-              <p className="font-semibold">{dailyChallenge.difficulty}</p>
+              <p className="font-semibold">Hard</p>
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-white/70 mb-1">Expected Cutoff</p>
-              <p className="font-semibold">{dailyChallenge.cutoff}%</p>
+              <p className="font-semibold">40%</p>
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-white/70 mb-1">Questions</p>
-              <p className="font-semibold">{dailyChallenge.questions}</p>
+              <p className="font-semibold">20</p>
             </div>
           </div>
           
           <Link 
-            to="/tests"
+            to="/daily-challenge"
             className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold hover:bg-yellow-50 transition-colors shadow-lg"
           >
             <PlayCircle className="h-5 w-5" />
