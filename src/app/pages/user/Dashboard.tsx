@@ -51,14 +51,51 @@ export function UserDashboard() {
       const { data: purchaseData } = await supabase.from("purchases").select("*, batches(*)").eq("user_id", user?.id);
       setPurchases(purchaseData || []);
       
-      // Fetch completed tests count
+      // Fetch completed tests with batch info for weak areas calculation
       const { data: attemptsData, error: attemptsError } = await supabase
         .from("test_attempts")
-        .select("id, user_id, score, total_marks")
+        .select("*, batches(name)")
         .eq("user_id", user?.id);
       
       if (!attemptsError && attemptsData) {
         setCompletedTests(attemptsData.length);
+        
+        // Calculate overall accuracy
+        const totalCorrect = attemptsData.reduce((acc, a) => acc + (a.correct_answers || 0), 0);
+        const totalWrong = attemptsData.reduce((acc, a) => acc + (a.wrong_answers || 0), 0);
+        const totalSkipped = attemptsData.reduce((acc, a) => acc + (a.skipped || 0), 0);
+        const totalQuestions = totalCorrect + totalWrong + totalSkipped;
+        const overallAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+        setAccuracy(overallAccuracy);
+        
+        // Calculate weak areas by batch/subject
+        const subjectMap: Record<string, { subject: string; correct: number; wrong: number; skipped: number }> = {};
+        attemptsData.forEach((attempt) => {
+          const subjectName = attempt.batches?.name?.slice(0, 20) || "General";
+          if (!subjectMap[subjectName]) {
+            subjectMap[subjectName] = { subject: subjectName, correct: 0, wrong: 0, skipped: 0 };
+          }
+          subjectMap[subjectName].correct += attempt.correct_answers || 0;
+          subjectMap[subjectName].wrong += attempt.wrong_answers || 0;
+          subjectMap[subjectName].skipped += attempt.skipped || 0;
+        });
+        
+        // Convert to weak areas format with accuracy calculation
+        const calculatedWeakAreas: WeakArea[] = Object.values(subjectMap).map((data) => {
+          const total = data.correct + data.wrong + data.skipped;
+          const accuracy = total > 0 ? Math.round((data.correct / total) * 100) : 0;
+          let status: 'critical' | 'warning' | 'good' = 'good';
+          if (accuracy < 50) status = 'critical';
+          else if (accuracy < 70) status = 'warning';
+          return { subject: data.subject, accuracy, status };
+        }).sort((a, b) => a.accuracy - b.accuracy); // Sort by accuracy (weakest first)
+        
+        setWeakAreas(calculatedWeakAreas.length > 0 ? calculatedWeakAreas : [
+          { subject: 'No Data', accuracy: 0, status: 'warning' }
+        ]);
+      } else {
+        setAccuracy(0);
+        setWeakAreas([]);
       }
 
       // Calculate overall rank
@@ -101,13 +138,8 @@ export function UserDashboard() {
 
   const [streak, setStreak] = useState(7);
   const [yesterdayRank, setYesterdayRank] = useState(2345);
-  const [accuracy, setAccuracy] = useState(72);
-  const [weakAreas, setWeakAreas] = useState<WeakArea[]>([
-    { subject: 'Polity', accuracy: 45, status: 'critical' },
-    { subject: 'Economy', accuracy: 62, status: 'warning' },
-    { subject: 'History', accuracy: 78, status: 'good' },
-    { subject: 'Geography', accuracy: 85, status: 'good' },
-  ]);
+  const [accuracy, setAccuracy] = useState(0);
+  const [weakAreas, setWeakAreas] = useState<WeakArea[]>([]);
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge>({
     questions: 20,
     timeMinutes: 15,
