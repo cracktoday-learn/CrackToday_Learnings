@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Trophy, Target, TrendingUp, ShoppingBag, FileText, ArrowRight, PlayCircle, Award, Zap, History, Users, CheckCircle, Newspaper, Flame, Clock, AlertTriangle, BarChart3, Share2, Smartphone, MessageCircle } from "lucide-react";
+import { BookOpen, Trophy, Target, TrendingUp, ShoppingBag, ArrowRight, PlayCircle, Award, Zap, History, Users, CheckCircle, Newspaper, Flame, Clock, AlertTriangle, BarChart3, Share2, Smartphone, MessageCircle } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -38,7 +38,6 @@ interface Purchase {
 
 export function UserDashboard() {
   const { user } = useAuth();
-  const [availableBatches, setAvailableBatches] = useState<Batch[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [completedTests, setCompletedTests] = useState<number>(0);
   const [overallRank, setOverallRank] = useState<number | null>(null);
@@ -49,8 +48,6 @@ export function UserDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data: batchData } = await supabase.from("batches").select("*").eq("is_active", true);
-      setAvailableBatches(batchData || []);
       const { data: purchaseData } = await supabase.from("purchases").select("*, batches(*)").eq("user_id", user?.id);
       setPurchases(purchaseData || []);
       
@@ -101,8 +98,6 @@ export function UserDashboard() {
       setLoading(false);
     }
   };
-
-  const purchasedBatchIds = purchases.map((p) => p.batch_id);
 
   const [streak, setStreak] = useState(7);
   const [yesterdayRank, setYesterdayRank] = useState(2345);
@@ -374,94 +369,55 @@ export function UserDashboard() {
         </Link>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-
-        {/* Purchased Batches */}
-        <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-indigo-600" /> My Purchased Tests
-          </h2>
-          {purchases.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
-              <ShoppingBag className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm">You have not purchased any batches yet.</p>
-              <Link to="/pricing" className="mt-3 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700">Browse Plans →</Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {purchases.map((purchase) => (
-                <div key={purchase.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:border-indigo-200 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold text-slate-900">{purchase.batches?.name}</h3>
-                      <p className="text-xs text-slate-500 mt-1">{purchase.batches?.exam_type} • {purchase.batches?.total_tests} tests</p>
-                    </div>
-                    <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Active</span>
-                  </div>
-                  <p className="text-sm text-slate-600 mb-4">{purchase.batches?.description}</p>
-                  <div className="grid grid-cols-3 gap-2 relative z-10">
-                    <Link
-                      to={`/test/${purchase.batch_id}`}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 relative z-10"
-                    >
-                      <PlayCircle className="h-4 w-4" /> Start
-                    </Link>
-                    <Link
-                      to={`/batch/${purchase.batch_id}/live-tests`}
-                      className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 relative z-10"
-                    >
-                      <Users className="h-4 w-4" /> Compete
-                    </Link>
-                    <Link
-                      to={`/batch/${purchase.batch_id}/previous-year-papers`}
-                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 relative z-10"
-                    >
-                      <History className="h-4 w-4" /> PYQ
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Available Batches */}
-        <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-indigo-600" /> Available Test Batches
-          </h2>
-          <div className="space-y-4">
-            {availableBatches.map((batch) => {
-              const isPurchased = purchasedBatchIds.includes(batch.id);
-              return (
-                <div key={batch.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-semibold text-slate-900">{batch.name}</h3>
-                      <p className="text-xs text-slate-500 mt-1">{batch.exam_type} • {batch.total_tests} tests</p>
-                    </div>
-                    <span className="text-lg font-bold text-indigo-600">₹{batch.price}</span>
-                  </div>
-                  <p className="text-sm text-slate-600 mb-4">{batch.description}</p>
-                  {isPurchased ? (
-                    <Link
-                      to={`/test/${batch.id}`}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2 relative z-10"
-                    >
-                      <PlayCircle className="h-4 w-4" /> Start Test
-                    </Link>
-                  ) : (
-                    <Link to={`/checkout/${batch.id}`} className="w-full bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2 relative z-10">
-                      Buy Now
-                    </Link>
-                  )}
-                </div>
-              );
-            })}
+      {/* Purchased Batches Only */}
+      <section className="max-w-2xl">
+        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <ShoppingBag className="h-5 w-5 text-indigo-600" /> My Enrolled Batches
+        </h2>
+        {purchases.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+            <ShoppingBag className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500 text-sm">You have not enrolled in any batches yet.</p>
+            <Link to="/pricing" className="mt-3 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700">Browse Plans →</Link>
           </div>
-        </section>
+        ) : (
+          <div className="space-y-4">
+            {purchases.map((purchase) => (
+              <div key={purchase.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:border-indigo-200 transition-colors">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-slate-900">{purchase.batches?.name}</h3>
+                    <p className="text-xs text-slate-500 mt-1">{purchase.batches?.exam_type} • {purchase.batches?.total_tests} tests</p>
+                  </div>
+                  <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Active</span>
+                </div>
+                <p className="text-sm text-slate-600 mb-4">{purchase.batches?.description}</p>
+                <div className="grid grid-cols-3 gap-2 relative z-10">
+                  <Link
+                    to={`/test/${purchase.batch_id}`}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 relative z-10"
+                  >
+                    <PlayCircle className="h-4 w-4" /> Start
+                  </Link>
+                  <Link
+                    to={`/batch/${purchase.batch_id}/live-tests`}
+                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 relative z-10"
+                  >
+                    <Users className="h-4 w-4" /> Compete
+                  </Link>
+                  <Link
+                    to={`/batch/${purchase.batch_id}/previous-year-papers`}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 relative z-10"
+                  >
+                    <History className="h-4 w-4" /> PYQ
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-      </div>
     </div>
   );
 }
