@@ -198,7 +198,7 @@ export function DailyChallenge() {
         <div className="max-w-4xl mx-auto text-center">
           <Trophy className="h-16 w-16 text-slate-300 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Daily Challenge</h1>
-          <p className="text-slate-600 mb-6">No questions available for today. Check back at 11 PM!</p>
+          <p className="text-slate-600 mb-6">No questions available for today. Check back at 6 AM!</p>
           <Link to="/dashboard" className="text-indigo-600 hover:text-indigo-700">
             Back to Dashboard
           </Link>
