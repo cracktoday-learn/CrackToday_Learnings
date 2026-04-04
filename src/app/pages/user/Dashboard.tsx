@@ -363,7 +363,7 @@ export function UserDashboard() {
           </div>
           <Link 
             to="/tests"
-            className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors relative z-10"
           >
             <PlayCircle className="h-5 w-5" />
             Improve Now → Auto Test
