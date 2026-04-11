@@ -42,6 +42,7 @@ export function UserDashboard() {
   const [completedTests, setCompletedTests] = useState<number>(0);
   const [overallRank, setOverallRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [batchProgress, setBatchProgress] = useState<Record<string, number>>({});
 
   useEffect(() => { fetchData(); }, []);
 
@@ -59,6 +60,24 @@ export function UserDashboard() {
       
       if (!attemptsError && attemptsData) {
         setCompletedTests(attemptsData.length);
+        
+        // Calculate next test number for each batch
+        const progress: Record<string, number> = {};
+        attemptsData.forEach((attempt) => {
+          const batchId = attempt.batch_id;
+          const testNum = attempt.test_number || 1;
+          if (!progress[batchId] || testNum > progress[batchId]) {
+            progress[batchId] = testNum;
+          }
+        });
+        // Next test is last completed + 1 (capped at total_tests)
+        purchaseData?.forEach((p: Purchase) => {
+          const batchId = p.batch_id;
+          const totalTests = p.batches?.total_tests || 1;
+          const lastCompleted = progress[batchId] || 0;
+          progress[batchId] = Math.min(lastCompleted + 1, totalTests);
+        });
+        setBatchProgress(progress);
         
         // Calculate overall accuracy
         const totalCorrect = attemptsData.reduce((acc, a) => acc + (a.correct_answers || 0), 0);
@@ -448,10 +467,10 @@ export function UserDashboard() {
                 <p className="text-sm text-slate-600 mb-4">{purchase.batches?.description}</p>
                 <div className="grid grid-cols-3 gap-2 relative z-10">
                   <Link
-                    to={`/test/${purchase.batch_id}`}
+                    to={`/test/${purchase.batch_id}?testNumber=${batchProgress[purchase.batch_id] || 1}`}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1 relative z-10"
                   >
-                    <PlayCircle className="h-4 w-4" /> Start
+                    <PlayCircle className="h-4 w-4" /> Start Test {batchProgress[purchase.batch_id] || 1}
                   </Link>
                   <Link
                     to={`/batch/${purchase.batch_id}/live-tests`}

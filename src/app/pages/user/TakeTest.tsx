@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Clock, ChevronLeft, ChevronRight, Flag, CheckCircle, AlertCircle, Target } from "lucide-react";
 import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
@@ -23,6 +23,7 @@ interface Question {
 
 export function TakeTest() {
   const { batchId } = useParams();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -30,7 +31,10 @@ export function TakeTest() {
   const [batchName, setBatchName] = useState("");
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentTestNumber, setCurrentTestNumber] = useState(1);
+  const [currentTestNumber, setCurrentTestNumber] = useState(() => {
+    const testNum = parseInt(searchParams.get("testNumber") || "1", 10);
+    return isNaN(testNum) || testNum < 1 ? 1 : testNum;
+  });
   const [totalTests, setTotalTests] = useState(1);
   const [completedTests, setCompletedTests] = useState<number[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});

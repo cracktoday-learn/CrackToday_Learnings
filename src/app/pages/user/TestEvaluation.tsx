@@ -556,7 +556,7 @@ export function TestEvaluation() {
             </button>
             {!isLastTest ? (
               <button
-                onClick={() => navigate(`/test/${batchId}`)}
+                onClick={() => navigate(`/test/${batchId}?testNumber=${parseInt(testNumber || "0") + 1}`)}
                 className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-semibold transition-colors"
               >
                 <ArrowRight className="h-5 w-5" />
@@ -611,7 +611,7 @@ export function TestEvaluation() {
             {!isLastTest ? (
               <>
                 <button
-                  onClick={() => navigate(`/test/${batchId}`)}
+                  onClick={() => navigate(`/test/${batchId}?testNumber=${parseInt(testNumber || "0") + 1}`)}
                   className="flex-1 bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
                 >
                   Start Next Test ({parseInt(testNumber || "0") + 1}/{batch.total_tests})
