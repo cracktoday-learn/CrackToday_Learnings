@@ -33,6 +33,7 @@ export function TestManagement() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", time_duration: "" });
+  const [editingTest, setEditingTest] = useState<Test | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -112,6 +113,12 @@ export function TestManagement() {
     }
   };
 
+  const openEditForm = (test: Test) => {
+    setEditingTest(test);
+    setForm({ name: test.name, time_duration: test.time_duration.toString() });
+    setShowForm(true);
+  };
+
   const handleSave = async () => {
     if (!form.name || !form.time_duration) {
       toast.error("Please fill all required fields");
@@ -119,35 +126,51 @@ export function TestManagement() {
     }
     setSaving(true);
     try {
-      const nextTestNumber = tests.length + 1;
-      const newTestId = crypto.randomUUID();
+      if (editingTest) {
+        // Update existing test
+        const { error } = await supabase.from("tests").update({
+          name: form.name,
+          time_duration: parseInt(form.time_duration),
+        }).eq("id", editingTest.id);
 
-      const { data, error } = await supabase.from("tests").insert({
-        id: newTestId,
-        batch_id: batchId,
-        name: form.name,
-        test_number: nextTestNumber,
-        time_duration: parseInt(form.time_duration),
-        question_count: 0,
-      }).select();
-
-      if (error) {
-        console.error("Error creating test:", error);
-        if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
-          toast.error("Tests table not found. Please run the database migration first.");
-        } else {
-          toast.error("Failed to create test: " + error.message);
+        if (error) {
+          console.error("Error updating test:", error);
+          toast.error("Failed to update test: " + error.message);
+          return;
         }
-        return;
-      }
+        toast.success("Test updated successfully!");
+        setEditingTest(null);
+      } else {
+        // Create new test
+        const nextTestNumber = tests.length + 1;
+        const newTestId = crypto.randomUUID();
 
-      toast.success("Test created successfully!");
+        const { data, error } = await supabase.from("tests").insert({
+          id: newTestId,
+          batch_id: batchId,
+          name: form.name,
+          test_number: nextTestNumber,
+          time_duration: parseInt(form.time_duration),
+          question_count: 0,
+        }).select();
+
+        if (error) {
+          console.error("Error creating test:", error);
+          if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+            toast.error("Tests table not found. Please run the database migration first.");
+          } else {
+            toast.error("Failed to create test: " + error.message);
+          }
+          return;
+        }
+        toast.success("Test created successfully!");
+      }
       setShowForm(false);
       setForm({ name: "", time_duration: "" });
       fetchTests();
     } catch (err) {
       console.error("Unexpected error:", err);
-      toast.error("Failed to create test. Please check database connection.");
+      toast.error("Failed to save test. Please check database connection.");
     } finally {
       setSaving(false);
     }
@@ -222,8 +245,8 @@ export function TestManagement() {
       {showForm && (
         <div className="bg-white rounded-2xl border border-indigo-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900">Add New Test</h2>
-            <button onClick={() => setShowForm(false)} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
+            <h2 className="text-lg font-bold text-slate-900">{editingTest ? "Edit Test" : "Add New Test"}</h2>
+            <button onClick={() => { setShowForm(false); setEditingTest(null); setForm({ name: "", time_duration: "" }); }} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -244,9 +267,9 @@ export function TestManagement() {
           <div className="flex gap-3 mt-4">
             <button onClick={handleSave} disabled={saving}
               className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50">
-              {saving ? "Saving..." : "Create Test"}
+              {saving ? "Saving..." : editingTest ? "Update Test" : "Create Test"}
             </button>
-            <button onClick={() => setShowForm(false)}
+            <button onClick={() => { setShowForm(false); setEditingTest(null); setForm({ name: "", time_duration: "" }); }}
               className="bg-white border border-slate-200 text-slate-700 px-6 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
               Cancel
             </button>
@@ -338,6 +361,11 @@ export function TestManagement() {
                           title="Manage Questions">
                           <BookOpen className="h-4 w-4" />
                         </Link>
+                        <button onClick={() => openEditForm(test)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Edit Test">
+                          <Edit className="h-4 w-4" />
+                        </button>
                         <button onClick={() => handleDelete(test)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete Test">
