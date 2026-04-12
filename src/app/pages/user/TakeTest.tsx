@@ -303,8 +303,26 @@ export function TakeTest() {
     }
   };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(async (forceSubmit = false) => {
     if (submitting) return;
+    
+    // Check if all questions are answered
+    const validQuestions = questions.filter(q => q && q.id);
+    const totalQuestions = validQuestions.length;
+    const answeredQuestions = validQuestions.filter(q => answers[q.id]).length;
+    const unansweredCount = totalQuestions - answeredQuestions;
+    
+    if (unansweredCount > 0 && !forceSubmit) {
+      toast.error(`Please answer all questions. ${unansweredCount} question${unansweredCount > 1 ? 's' : ''} remaining.`, {
+        duration: 4000,
+        action: {
+          label: 'Submit Anyway',
+          onClick: () => handleSubmit(true)
+        }
+      });
+      return;
+    }
+    
     setSubmitting(true);
     try {
       let score = 0;
@@ -683,11 +701,24 @@ export function TakeTest() {
               {formatTime(timeLeft)}
             </div>
             <button
-              onClick={() => { if (confirm("Are you sure you want to submit the test?")) handleSubmit(); }}
+              onClick={() => { 
+                const validQuestions = questions.filter(q => q && q.id);
+                const totalQuestions = validQuestions.length;
+                const answeredQuestions = validQuestions.filter(q => answers[q.id]).length;
+                const unansweredCount = totalQuestions - answeredQuestions;
+                
+                if (unansweredCount > 0) {
+                  if (confirm(`${unansweredCount} question${unansweredCount > 1 ? 's' : ''} not answered. Submit anyway?`)) {
+                    handleSubmit(true);
+                  }
+                } else if (confirm("Are you sure you want to submit the test?")) {
+                  handleSubmit(true);
+                }
+              }}
               disabled={submitting}
               className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              {submitting ? "Submitting..." : "Submit Test"}
+              {submitting ? "Submitting..." : `Submit Test (${Object.keys(answers).length}/${questions.filter(q => q && q.id).length})`}
             </button>
           </div>
           
