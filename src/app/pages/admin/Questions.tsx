@@ -196,8 +196,8 @@ export function AdminQuestions() {
 
   // Filter questions by selected test
   const filteredQuestions = filterTestId === "all" 
-    ? questions 
-    : questions.filter(q => q.test_id === filterTestId || q.test_number?.toString() === tests.find(t => t.id === filterTestId)?.test_number?.toString());
+    ? questions.filter(q => q && q.id) // Filter out any undefined/null questions
+    : questions.filter(q => q && q.id && (q.test_id === filterTestId || q.test_number?.toString() === tests.find(t => t.id === filterTestId)?.test_number?.toString()));
 
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -537,7 +537,7 @@ export function AdminQuestions() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filteredQuestions.map((q, index) => (
+            {filteredQuestions.filter(q => q && q.id).map((q, index) => (
               <div key={q.id} className="p-5 hover:bg-slate-50 transition-colors">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
