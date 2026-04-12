@@ -72,7 +72,7 @@ export function TakeTest() {
 
     // Prevent keyboard shortcuts for screenshots and dev tools
     const preventKeys = (e: KeyboardEvent) => {
-      // Print Screen
+      // Print Screen (Windows)
       if (e.key === "PrintScreen") {
         e.preventDefault();
         toast.error("Screenshots are not allowed during the test");
@@ -84,24 +84,49 @@ export function TakeTest() {
         toast.error("Screenshots are not allowed during the test");
         return;
       }
-      // Ctrl+Shift+Cmd+4 (Mac screenshot area)
-      if (e.ctrlKey && e.shiftKey && e.key === "4") {
-        e.preventDefault();
-        toast.error("Screenshots are not allowed during the test");
-        return;
+      // Mac Screenshots (Cmd+Shift combinations)
+      if (e.metaKey && e.shiftKey) {
+        // Cmd+Shift+3 (Mac full screen screenshot)
+        if (e.key === "3") {
+          e.preventDefault();
+          toast.error("Screenshots are not allowed during the test");
+          return;
+        }
+        // Cmd+Shift+4 (Mac area screenshot)
+        if (e.key === "4") {
+          e.preventDefault();
+          toast.error("Screenshots are not allowed during the test");
+          return;
+        }
+        // Cmd+Shift+5 (Mac screen recording toolbar)
+        if (e.key === "5") {
+          e.preventDefault();
+          toast.error("Screen recording is not allowed during the test");
+          return;
+        }
+      }
+      // Mac Screenshot with Control to copy to clipboard
+      if (e.metaKey && e.shiftKey && e.ctrlKey) {
+        if (e.key === "3" || e.key === "4") {
+          e.preventDefault();
+          toast.error("Screenshots are not allowed during the test");
+          return;
+        }
       }
       // F12 (Dev tools)
       if (e.key === "F12") {
         e.preventDefault();
         return;
       }
-      // Ctrl+Shift+I (Dev tools)
-      if (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i")) {
+      // Ctrl+Shift+I or Cmd+Option+I (Dev tools)
+      if ((e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i")) ||
+          (e.metaKey && e.altKey && (e.key === "I" || e.key === "i"))) {
         e.preventDefault();
         return;
       }
-      // Ctrl+U (View source)
-      if (e.ctrlKey && (e.key === "U" || e.key === "u")) {
+      // Ctrl+U or Cmd+Option+U (View source)
+      if ((e.ctrlKey && (e.key === "U" || e.key === "u")) ||
+          (e.metaKey && e.altKey && (e.key === "U" || e.key === "u"))) {
         e.preventDefault();
         return;
       }
