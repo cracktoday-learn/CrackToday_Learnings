@@ -60,6 +60,83 @@ export function TakeTest() {
     return () => clearInterval(timer);
   }, [testStarted, timeLeft, testFinished]);
 
+  // Screenshot and screen recording prevention
+  useEffect(() => {
+    if (!testStarted || testFinished) return;
+
+    // Prevent right-click context menu
+    const preventContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      toast.error("Right-click is disabled during the test");
+    };
+
+    // Prevent keyboard shortcuts for screenshots and dev tools
+    const preventKeys = (e: KeyboardEvent) => {
+      // Print Screen
+      if (e.key === "PrintScreen") {
+        e.preventDefault();
+        toast.error("Screenshots are not allowed during the test");
+        return;
+      }
+      // Ctrl+Shift+S (Firefox screenshot)
+      if (e.ctrlKey && e.shiftKey && e.key === "S") {
+        e.preventDefault();
+        toast.error("Screenshots are not allowed during the test");
+        return;
+      }
+      // Ctrl+Shift+Cmd+4 (Mac screenshot area)
+      if (e.ctrlKey && e.shiftKey && e.key === "4") {
+        e.preventDefault();
+        toast.error("Screenshots are not allowed during the test");
+        return;
+      }
+      // F12 (Dev tools)
+      if (e.key === "F12") {
+        e.preventDefault();
+        return;
+      }
+      // Ctrl+Shift+I (Dev tools)
+      if (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i")) {
+        e.preventDefault();
+        return;
+      }
+      // Ctrl+U (View source)
+      if (e.ctrlKey && (e.key === "U" || e.key === "u")) {
+        e.preventDefault();
+        return;
+      }
+    };
+
+    // Detect tab/window switching
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        toast.warning("Tab switching detected! Please stay on the test page.");
+      }
+    };
+
+    // Detect window blur (clicking outside)
+    const handleWindowBlur = () => {
+      toast.warning("Window focus lost! Please stay on the test page.");
+    };
+
+    // Add event listeners
+    document.addEventListener("contextmenu", preventContextMenu);
+    document.addEventListener("keydown", preventKeys);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+
+    // Attempt to prevent screen recording via CSS
+    document.body.style.userSelect = "none";
+
+    return () => {
+      document.removeEventListener("contextmenu", preventContextMenu);
+      document.removeEventListener("keydown", preventKeys);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+      document.body.style.userSelect = "";
+    };
+  }, [testStarted, testFinished]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
