@@ -455,7 +455,7 @@ export function TakeTest() {
     }
   };
 
-  const currentQuestion = questions[currentIndex];
+  const currentQuestion = questions.filter(q => q && q.id)[currentIndex];
   const answeredCount = Object.keys(answers).length;
 
   if (loading) {
@@ -466,7 +466,7 @@ export function TakeTest() {
     );
   }
 
-  if (questions.length === 0) {
+  if (!currentQuestion || questions.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
