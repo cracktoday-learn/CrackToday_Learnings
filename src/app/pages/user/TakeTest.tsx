@@ -45,6 +45,26 @@ export function TakeTest() {
   const [result, setResult] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [testDuration, setTestDuration] = useState(60); // Store test duration in minutes
+  const [userProfile, setUserProfile] = useState<{name: string; email: string} | null>(null);
+
+  // Seeded random shuffle for consistent order per user
+  const seededShuffle = (array: Question[], seed: string) => {
+    const arr = [...array];
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+      hash = hash & hash;
+    }
+    const random = () => {
+      hash = ((hash * 9301 + 49297) % 233280) / 233280;
+      return hash;
+    };
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
 
   useEffect(() => {
     fetchData();
@@ -224,6 +244,10 @@ export function TakeTest() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Fetch user profile for watermark
+      const { data: profile } = await supabase.from("profiles").select("name,email").eq("id", user?.id).single();
+      setUserProfile(profile || null);
+
       const { data: batch } = await supabase.from("batches").select("name,total_tests").eq("id", batchId).single();
       setBatchName(batch?.name || "");
       setTotalTests(batch?.total_tests || 1);
@@ -262,9 +286,10 @@ export function TakeTest() {
           });
         }
         
-        // Set current test questions
+        // Set current test questions with shuffle per user
         const currentTestQuestions = questionsByTest[currentTestNumber] || questionsByTest[1] || [];
-        setQuestions(currentTestQuestions);
+        const shuffledQuestions = seededShuffle(currentTestQuestions, user?.id || 'default');
+        setQuestions(shuffledQuestions);
         
         // Use test's time_duration from database, or fallback to calculated time
         const duration = testData?.time_duration || Math.round(currentTestQuestions.length * 1.5);
@@ -684,8 +709,16 @@ export function TakeTest() {
       <div className="max-w-4xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
         {/* Question Panel */}
-        <div className="lg:col-span-3">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="lg:col-span-3 relative">
+          {/* Watermark overlay */}
+          {userProfile && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 select-none opacity-10 rotate-[-15deg]">
+              <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-slate-900 whitespace-nowrap">
+                {userProfile.name} • {userProfile.email}
+              </div>
+            </div>
+          )}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-400">Q{currentIndex + 1} of {questions.length}</span>
