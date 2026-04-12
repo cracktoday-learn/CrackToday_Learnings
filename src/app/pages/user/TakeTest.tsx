@@ -144,21 +144,80 @@ export function TakeTest() {
       toast.warning("Window focus lost! Please stay on the test page.");
     };
 
+    // Mobile: Prevent touch hold context menu
+    const preventTouchContextMenu = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+        toast.error("Multi-touch gestures are disabled during the test");
+      }
+    };
+
+    // Mobile: Prevent long press
+    let touchTimer: NodeJS.Timeout;
+    const preventLongPress = (e: TouchEvent) => {
+      touchTimer = setTimeout(() => {
+        e.preventDefault();
+        toast.error("Long press is disabled during the test");
+      }, 500);
+    };
+    const cancelLongPress = () => {
+      clearTimeout(touchTimer);
+    };
+
+    // Detect screen capture API usage
+    const detectScreenCapture = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasScreenCapture = devices.some(device => device.label.toLowerCase().includes('screen'));
+        if (hasScreenCapture) {
+          toast.warning("Screen capture detected! Please close any screen recording software.");
+        }
+      } catch (err) {
+        // Silent fail
+      }
+    };
+    const screenCheckInterval = setInterval(detectScreenCapture, 3000);
+
     // Add event listeners
     document.addEventListener("contextmenu", preventContextMenu);
     document.addEventListener("keydown", preventKeys);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("blur", handleWindowBlur);
+    document.addEventListener("touchstart", preventTouchContextMenu, { passive: false });
+    document.addEventListener("touchstart", preventLongPress, { passive: false });
+    document.addEventListener("touchend", cancelLongPress);
+    document.addEventListener("touchmove", cancelLongPress);
 
-    // Attempt to prevent screen recording via CSS
+    // CSS protections against screenshots
     document.body.style.userSelect = "none";
+    (document.body.style as any).webkitUserSelect = "none";
+    (document.body.style as any).msUserSelect = "none";
+    (document.body.style as any).webkitTouchCallout = "none";
+    document.body.style.pointerEvents = "auto";
+
+    // Before unload warning
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
       document.removeEventListener("contextmenu", preventContextMenu);
       document.removeEventListener("keydown", preventKeys);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleWindowBlur);
+      document.removeEventListener("touchstart", preventTouchContextMenu);
+      document.removeEventListener("touchstart", preventLongPress);
+      document.removeEventListener("touchend", cancelLongPress);
+      document.removeEventListener("touchmove", cancelLongPress);
+      clearInterval(screenCheckInterval);
       document.body.style.userSelect = "";
+      (document.body.style as any).webkitUserSelect = "";
+      (document.body.style as any).msUserSelect = "";
+      (document.body.style as any).webkitTouchCallout = "";
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [testStarted, testFinished]);
 
