@@ -599,7 +599,7 @@ export function TakeTest() {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
             <h2 className="text-lg font-bold text-slate-900 mb-4">Answer Review</h2>
             <div className="space-y-4">
-              {questions.map((q, i) => {
+              {questions.filter(q => q && q.id).map((q, i) => {
                 const userAnswer = answers[q.id];
                 const isCorrect = userAnswer === q.correct_answer;
                 const isSkipped = !userAnswer;
@@ -792,7 +792,7 @@ export function TakeTest() {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sticky top-20">
             <h3 className="text-sm font-bold text-slate-900 mb-3">Questions</h3>
             <div className="grid grid-cols-5 gap-1.5 mb-4">
-              {questions.map((q, i) => (
+              {questions.filter(q => q && q.id).map((q, i) => (
                 <button
                   key={q.id}
                   onClick={() => setCurrentIndex(i)}
