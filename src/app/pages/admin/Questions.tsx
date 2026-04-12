@@ -50,6 +50,7 @@ export function AdminQuestions() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [tests, setTests] = useState<Test[]>([]);
   const [selectedTestId, setSelectedTestId] = useState<string>("");
+  const [filterTestId, setFilterTestId] = useState<string>("all");
   const [batchName, setBatchName] = useState("");
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -193,6 +194,11 @@ export function AdminQuestions() {
     }
   };
 
+  // Filter questions by selected test
+  const filteredQuestions = filterTestId === "all" 
+    ? questions 
+    : questions.filter(q => q.test_id === filterTestId || q.test_number?.toString() === tests.find(t => t.id === filterTestId)?.test_number?.toString());
+
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -313,10 +319,28 @@ export function AdminQuestions() {
           <p className="text-slate-500 text-sm">{questions.length} questions total</p>
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* View Filter */}
+          {tests.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-slate-700">Filter:</label>
+              <select
+                value={filterTestId}
+                onChange={(e) => setFilterTestId(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+              >
+                <option value="all">All Tests</option>
+                {tests.map((test) => (
+                  <option key={test.id} value={test.id}>
+                    {test.name} (Test {test.test_number})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           {/* Test Selector */}
           {tests.length > 0 && (
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-slate-700">Upload to Test:</label>
+              <label className="text-sm font-medium text-slate-700">Upload to:</label>
               <select
                 value={selectedTestId}
                 onChange={(e) => setSelectedTestId(e.target.value)}
@@ -495,15 +519,17 @@ export function AdminQuestions() {
       {/* Questions List */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="font-bold text-slate-900">All Questions</h2>
-          <span className="text-sm text-slate-500">{questions.length} questions</span>
+          <h2 className="font-bold text-slate-900">
+            {filterTestId === "all" ? "All Questions" : `${tests.find(t => t.id === filterTestId)?.name || "Test"} Questions`}
+          </h2>
+          <span className="text-sm text-slate-500">{filteredQuestions.length} questions</span>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
           </div>
-        ) : questions.length === 0 ? (
+        ) : filteredQuestions.length === 0 ? (
           <div className="text-center py-16">
             <FileText className="h-10 w-10 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500 text-sm">No questions yet.</p>
@@ -511,7 +537,7 @@ export function AdminQuestions() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {questions.map((q, index) => (
+            {filteredQuestions.map((q, index) => (
               <div key={q.id} className="p-5 hover:bg-slate-50 transition-colors">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -523,6 +549,11 @@ export function AdminQuestions() {
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
                         {q.marks} mark{q.marks > 1 ? "s" : ""}
                       </span>
+                      {filterTestId === "all" && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                          Test {q.test_number || tests.find(t => t.id === q.test_id)?.test_number || "?"}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm font-medium text-slate-900 mb-2">{q.question}</p>
                     {q.type === "mcq" && (
