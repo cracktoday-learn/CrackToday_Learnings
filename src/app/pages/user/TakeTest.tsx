@@ -313,7 +313,7 @@ export function TakeTest() {
       let skipped = 0;
       let totalMarks = 0;
 
-      questions.forEach((q) => {
+      questions.filter(q => q && q.id).forEach((q) => {
         totalMarks += q.marks;
         const userAnswer = answers[q.id];
         if (!userAnswer) {
