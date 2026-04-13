@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Search, Filter, Clock, Users, ArrowRight } from "lucide-react";
+import { BookOpen, Search, Filter, Clock, Users, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
@@ -99,7 +99,15 @@ export function Exams() {
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
                     {exam.exam_type}
                   </span>
-                  <span className="text-lg font-bold text-slate-900">₹{exam.price}</span>
+                  <span className={`text-lg font-bold ${exam.price === 0 ? 'text-emerald-500 flex items-center gap-1' : 'text-slate-900'}`}>
+                    {exam.price === 0 ? (
+                      <>
+                        <Sparkles className="h-4 w-4 animate-pulse" /> FREE
+                      </>
+                    ) : (
+                      `₹${exam.price}`
+                    )}
+                  </span>
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{exam.name}</h3>
                 <div className="space-y-2 mb-6">
