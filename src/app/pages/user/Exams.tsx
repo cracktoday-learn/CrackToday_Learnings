@@ -152,7 +152,7 @@ export function Exams() {
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{exam.name}</h3>
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center text-sm text-slate-500">
-                    <BookOpen className="h-4 w-4 mr-2" /> {(exam as any).actual_test_count || exam.total_tests || 0} Full Tests
+                    <BookOpen className="h-4 w-4 mr-2" /> {(exam as any).actual_test_count !== undefined ? (exam as any).actual_test_count : (exam.total_tests || 0)} Full Tests
                   </div>
                   <div className="flex items-center text-sm text-slate-500">
                     <Users className="h-4 w-4 mr-2" /> {exam.enrolled_count} Enrolled Students
