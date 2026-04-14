@@ -55,6 +55,8 @@ export function Exams() {
         enrolled_count: countMap.get(exam.id) || 0
       }));
       
+      console.log("Exams data:", examsWithCount.map(e => ({ name: e.name, total_tests: e.total_tests })));
+      
       setExams(examsWithCount);
     } catch (err) {
       toast.error("Failed to load exams");
@@ -134,7 +136,7 @@ export function Exams() {
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{exam.name}</h3>
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center text-sm text-slate-500">
-                    <BookOpen className="h-4 w-4 mr-2" /> {exam.total_tests} Full Tests
+                    <BookOpen className="h-4 w-4 mr-2" /> {exam.total_tests || 0} Full Tests
                   </div>
                   <div className="flex items-center text-sm text-slate-500">
                     <Users className="h-4 w-4 mr-2" /> {exam.enrolled_count} Enrolled Students
