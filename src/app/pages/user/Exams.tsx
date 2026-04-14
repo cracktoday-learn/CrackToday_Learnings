@@ -29,7 +29,7 @@ export function Exams() {
     try {
       const { data, error } = await supabase
         .from("batches")
-        .select("*")
+        .select("id, name, category, exam_type, price, total_tests, description, is_active, created_at")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
