@@ -38,8 +38,7 @@ export function Exams() {
       // Get enrolled count for each batch from purchases table
       const { data: purchases, error: purchasesError } = await supabase
         .from("purchases")
-        .select("batch_id")
-        .eq("status", "active");
+        .select("batch_id");
       
       if (purchasesError) throw purchasesError;
       
