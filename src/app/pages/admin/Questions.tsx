@@ -51,6 +51,7 @@ export function AdminQuestions() {
   const [tests, setTests] = useState<Test[]>([]);
   const [selectedTestId, setSelectedTestId] = useState<string>("");
   const [filterTestId, setFilterTestId] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all"); // all, mcq, tf
   const [batchName, setBatchName] = useState("");
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -194,10 +195,20 @@ export function AdminQuestions() {
     }
   };
 
-  // Filter questions by selected test
-  const filteredQuestions = filterTestId === "all" 
-    ? questions.filter(q => q && q.id) // Filter out any undefined/null questions
-    : questions.filter(q => q && q.id && (q.test_id === filterTestId || q.test_number?.toString() === tests.find(t => t.id === filterTestId)?.test_number?.toString()));
+  // Filter questions by selected test and type
+  const filteredQuestions = questions.filter(q => {
+    if (!q || !q.id) return false;
+    
+    // Test filter
+    const testMatch = filterTestId === "all" || 
+      q.test_id === filterTestId || 
+      q.test_number?.toString() === tests.find(t => t.id === filterTestId)?.test_number?.toString();
+    
+    // Type filter
+    const typeMatch = filterType === "all" || q.type === filterType;
+    
+    return testMatch && typeMatch;
+  });
 
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -334,6 +345,15 @@ export function AdminQuestions() {
                     {test.name} (Test {test.test_number})
                   </option>
                 ))}
+              </select>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+              >
+                <option value="all">All Types</option>
+                <option value="mcq">MCQ</option>
+                <option value="tf">True/False</option>
               </select>
             </div>
           )}
