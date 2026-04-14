@@ -50,12 +50,28 @@ export function Exams() {
         console.error("Failed to load purchase counts:", purchaseErr);
       }
       
+      // Get actual test count for each batch from tests table
+      let testCountMap = new Map<string, number>();
+      try {
+        const { data: tests } = await supabase
+          .from("tests")
+          .select("batch_id");
+        
+        // Count tests per batch
+        tests?.forEach(t => {
+          testCountMap.set(t.batch_id, (testCountMap.get(t.batch_id) || 0) + 1);
+        });
+      } catch (testErr) {
+        console.error("Failed to load test counts:", testErr);
+      }
+      
       const examsWithCount = (data || []).map(exam => ({
         ...exam,
-        enrolled_count: countMap.get(exam.id) || 0
+        enrolled_count: countMap.get(exam.id) || 0,
+        actual_test_count: testCountMap.get(exam.id) || 0
       }));
       
-      console.log("Exams data:", examsWithCount.map(e => ({ name: e.name, total_tests: e.total_tests })));
+      console.log("Exams data:", examsWithCount.map(e => ({ name: e.name, actual_test_count: e.actual_test_count, total_tests: e.total_tests })));
       
       setExams(examsWithCount);
     } catch (err) {
@@ -136,7 +152,7 @@ export function Exams() {
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{exam.name}</h3>
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center text-sm text-slate-500">
-                    <BookOpen className="h-4 w-4 mr-2" /> {exam.total_tests || 0} Full Tests
+                    <BookOpen className="h-4 w-4 mr-2" /> {(exam as any).actual_test_count || exam.total_tests || 0} Full Tests
                   </div>
                   <div className="flex items-center text-sm text-slate-500">
                     <Users className="h-4 w-4 mr-2" /> {exam.enrolled_count} Enrolled Students
