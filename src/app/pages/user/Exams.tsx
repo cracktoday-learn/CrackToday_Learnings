@@ -12,6 +12,7 @@ interface Exam {
   price: number;
   total_tests: number;
   description: string;
+  enrolled_count: number;
 }
 
 export function Exams() {
@@ -33,7 +34,27 @@ export function Exams() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setExams(data || []);
+      
+      // Get enrolled count for each batch from purchases table
+      const { data: purchases, error: purchasesError } = await supabase
+        .from("purchases")
+        .select("batch_id")
+        .eq("status", "active");
+      
+      if (purchasesError) throw purchasesError;
+      
+      // Count enrollments per batch
+      const countMap = new Map<string, number>();
+      purchases?.forEach(p => {
+        countMap.set(p.batch_id, (countMap.get(p.batch_id) || 0) + 1);
+      });
+      
+      const examsWithCount = (data || []).map(exam => ({
+        ...exam,
+        enrolled_count: countMap.get(exam.id) || 0
+      }));
+      
+      setExams(examsWithCount);
     } catch (err) {
       toast.error("Failed to load exams");
     } finally {
@@ -115,7 +136,7 @@ export function Exams() {
                     <BookOpen className="h-4 w-4 mr-2" /> {exam.total_tests} Full Tests
                   </div>
                   <div className="flex items-center text-sm text-slate-500">
-                    <Users className="h-4 w-4 mr-2" /> Enrolled Students
+                    <Users className="h-4 w-4 mr-2" /> {exam.enrolled_count} Enrolled Students
                   </div>
                   <div className="flex items-center text-sm text-slate-500">
                     <Clock className="h-4 w-4 mr-2" /> Full Access
