@@ -36,17 +36,19 @@ export function Exams() {
       if (error) throw error;
       
       // Get enrolled count for each batch from purchases table
-      const { data: purchases, error: purchasesError } = await supabase
-        .from("purchases")
-        .select("batch_id");
-      
-      if (purchasesError) throw purchasesError;
-      
-      // Count enrollments per batch
-      const countMap = new Map<string, number>();
-      purchases?.forEach(p => {
-        countMap.set(p.batch_id, (countMap.get(p.batch_id) || 0) + 1);
-      });
+      let countMap = new Map<string, number>();
+      try {
+        const { data: purchases } = await supabase
+          .from("purchases")
+          .select("batch_id");
+        
+        // Count enrollments per batch
+        purchases?.forEach(p => {
+          countMap.set(p.batch_id, (countMap.get(p.batch_id) || 0) + 1);
+        });
+      } catch (purchaseErr) {
+        console.error("Failed to load purchase counts:", purchaseErr);
+      }
       
       const examsWithCount = (data || []).map(exam => ({
         ...exam,
