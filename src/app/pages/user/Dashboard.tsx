@@ -55,8 +55,9 @@ export function UserDashboard() {
       // Fetch attempts with answers to analyze by subject
       const { data: attemptsData, error: attemptsError } = await supabase
         .from("test_attempts")
-        .select("*, batches(name, exam_type)")
-        .eq("user_id", user?.id);
+        .select("*, batches(name, exam_type), created_at")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false });
       
       if (!attemptsError && attemptsData) {
         setCompletedTests(attemptsData.length);
@@ -86,6 +87,49 @@ export function UserDashboard() {
         const totalQuestions = totalCorrect + totalWrong + totalSkipped;
         const overallAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
         setAccuracy(overallAccuracy);
+        
+        // Calculate real streak based on consecutive days of test attempts
+        const calculateStreak = () => {
+          if (!attemptsData || attemptsData.length === 0) return 0;
+          
+          // Get unique dates with test attempts (normalized to local date)
+          const attemptDates = new Set<string>();
+          attemptsData.forEach(attempt => {
+            if (attempt.created_at) {
+              const date = new Date(attempt.created_at).toDateString();
+              attemptDates.add(date);
+            }
+          });
+          
+          const dates = Array.from(attemptDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+          if (dates.length === 0) return 0;
+          
+          // Check if user attempted today or yesterday to maintain streak
+          const today = new Date().toDateString();
+          const yesterday = new Date(Date.now() - 86400000).toDateString();
+          
+          if (!attemptDates.has(today) && !attemptDates.has(yesterday)) {
+            return 0; // Streak broken - no attempt today or yesterday
+          }
+          
+          // Count consecutive days
+          let streak = 1;
+          for (let i = 0; i < dates.length - 1; i++) {
+            const current = new Date(dates[i]);
+            const next = new Date(dates[i + 1]);
+            const diffDays = (current.getTime() - next.getTime()) / (1000 * 60 * 60 * 24);
+            
+            if (diffDays === 1) {
+              streak++;
+            } else {
+              break;
+            }
+          }
+          
+          return streak;
+        };
+        
+        setStreak(calculateStreak());
         
         // For now, use exam_type as subject categories with AI-based naming
         const examTypeMap: Record<string, { subject: string; correct: number; wrong: number; skipped: number }> = {};
@@ -177,7 +221,7 @@ export function UserDashboard() {
     }
   };
 
-  const [streak, setStreak] = useState(7);
+  const [streak, setStreak] = useState(0);
   const [yesterdayRank, setYesterdayRank] = useState(2345);
   const [accuracy, setAccuracy] = useState(0);
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([]);
