@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { BookOpen, User, LogOut, Menu, X } from "lucide-react";
+import { BookOpen, User, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
 import { AdminLink } from "../components/AdminLink";
 import { supabase } from "../../utils/supabase/client";
@@ -31,6 +31,7 @@ export function MainLayout() {
 
   const loggedInNavLinks = [
     { to: "/", label: "Home" },
+    { to: "/dashboard", label: "Dashboard" },
     { to: "/exams", label: "Exams" },
     { to: "/performance", label: "Performance" },
     { to: "/current-affairs", label: "Current Affairs" },
