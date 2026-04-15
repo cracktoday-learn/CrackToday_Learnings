@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Plus, Search, FileText, Clock, Edit, Trash2, X, BookOpen, Upload, ArrowLeft } from "lucide-react";
+import { Plus, Search, FileText, Clock, Edit, Trash2, X, BookOpen, Upload, ArrowLeft, Download } from "lucide-react";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 interface Test {
   id: string;
@@ -211,6 +212,63 @@ export function TestManagement() {
     }
   };
 
+  const handleExportResults = async (test: Test) => {
+    try {
+      toast.loading("Exporting test results...");
+      
+      // Fetch test attempts with user profiles
+      const { data: attempts, error } = await supabase
+        .from("test_attempts")
+        .select("*, profiles(name, email)")
+        .eq("batch_id", batchId)
+        .eq("test_number", test.test_number)
+        .order("score", { ascending: false });
+      
+      if (error) throw error;
+      
+      if (!attempts || attempts.length === 0) {
+        toast.dismiss();
+        toast.error("No test results found for this test");
+        return;
+      }
+      
+      // Prepare data for Excel
+      const exportData = attempts.map((attempt: any, index: number) => ({
+        "Rank": index + 1,
+        "Candidate Name": attempt.profiles?.name || "Unknown",
+        "Email": attempt.profiles?.email || "N/A",
+        "Score": attempt.score || 0,
+        "Total Marks": attempt.total_marks || 0,
+        "Correct Answers": attempt.correct_answers || 0,
+        "Wrong Answers": attempt.wrong_answers || 0,
+        "Skipped": attempt.skipped || 0,
+        "Accuracy (%)": attempt.total_marks > 0 ? Math.round((attempt.score / attempt.total_marks) * 100) : 0,
+        "Time Taken (minutes)": Math.round((attempt.time_taken || 0) / 60),
+        "Submitted At": attempt.created_at ? new Date(attempt.created_at).toLocaleString() : "N/A"
+      }));
+      
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Test Results");
+      
+      // Generate filename
+      const filename = `${batch?.name || "Batch"}_Test${test.test_number}_Results.xlsx`;
+      
+      // Download
+      XLSX.writeFile(wb, filename);
+      
+      toast.dismiss();
+      toast.success(`Exported ${attempts.length} candidate results!`);
+    } catch (err) {
+      toast.dismiss();
+      console.error("Export error:", err);
+      toast.error("Failed to export results");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -356,6 +414,11 @@ export function TestManagement() {
                     <td className="px-6 py-4 text-sm text-slate-700">{test.question_count || 0} questions</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => handleExportResults(test)}
+                          className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Export Results">
+                          <Download className="h-4 w-4" />
+                        </button>
                         <Link to={`/admin/tests/${batchId}/test/${test.id}/questions`}
                           className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                           title="Manage Questions">
