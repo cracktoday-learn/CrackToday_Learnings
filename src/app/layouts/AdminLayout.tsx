@@ -33,6 +33,7 @@ export function AdminLayout() {
     { label: "Test Batches", href: "/admin/tests", icon: FileText },
     { label: "Previous Year Papers", href: "/admin/previous-year-papers", icon: History },
     { label: "Coupons", href: "/admin/coupons", icon: Tag },
+    { label: "Notifications", href: "/admin/notifications", icon: Bell },
     { label: "Settings", href: "/admin/settings", icon: Settings },
   ];
 

@@ -29,6 +29,7 @@ import { AdminQuestions } from "./pages/admin/Questions";
 import { AdminCoupons } from "./pages/admin/Coupons";
 import { AdminPreviousYearPapers } from "./pages/admin/PreviousYearPapers";
 import { AdminSettings } from "./pages/admin/Settings";
+import { AdminNotifications } from "./pages/admin/Notifications";
 import { Login } from "./pages/auth/Login";
 import { Signup } from "./pages/auth/Signup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -121,6 +122,7 @@ export const router = createBrowserRouter([
       { path: "coupons", Component: AdminCoupons },
       { path: "previous-year-papers", Component: AdminPreviousYearPapers },
       { path: "settings", Component: AdminSettings },
+      { path: "notifications", Component: AdminNotifications },
     ],
   },
 ]);

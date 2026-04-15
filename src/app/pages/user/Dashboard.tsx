@@ -5,6 +5,7 @@ import { useAuth } from "../../components/AuthProvider";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { UserNotifications } from "../../components/UserNotifications";
 
 interface Batch {
   id: string;
@@ -264,6 +265,9 @@ export function UserDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      {/* User Notifications */}
+      <UserNotifications />
 
       {/* Header */}
       <div className="mb-8">
