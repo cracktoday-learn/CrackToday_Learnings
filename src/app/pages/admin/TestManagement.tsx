@@ -293,7 +293,7 @@ export function TestManagement() {
           </div>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { setEditingTest(null); setForm({ name: "", time_duration: "" }); setShowForm(true); }}
           className="bg-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2"
         >
           <Plus className="h-5 w-5" /> Add New Test
@@ -371,7 +371,7 @@ export function TestManagement() {
             <FileText className="h-10 w-10 mx-auto mb-3 text-slate-300" />
             <p>No tests created yet.</p>
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => { setEditingTest(null); setForm({ name: "", time_duration: "" }); setShowForm(true); }}
               className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
               Create First Test
