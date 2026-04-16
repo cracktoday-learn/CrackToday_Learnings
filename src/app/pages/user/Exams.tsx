@@ -17,6 +17,7 @@ interface Exam {
 
 export function Exams() {
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [priceFilter, setPriceFilter] = useState<"all" | "free" | "paid">("all");
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,7 +87,10 @@ export function Exams() {
     const searchMatch = !searchQuery || 
       exam.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exam.exam_type.toLowerCase().includes(searchQuery.toLowerCase());
-    return categoryMatch && searchMatch;
+    const priceMatch = priceFilter === "all" || 
+      (priceFilter === "free" && exam.price === 0) || 
+      (priceFilter === "paid" && exam.price > 0);
+    return categoryMatch && searchMatch && priceMatch;
   });
 
   return (
@@ -115,14 +119,49 @@ export function Exams() {
           </div>
         </div>
 
+        {/* Price Filter Slicers */}
+        <div className="flex gap-3 mb-4">
+          <button
+            onClick={() => setPriceFilter("all")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+              priceFilter === "all"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+            }`}
+          >
+            All Batches
+          </button>
+          <button
+            onClick={() => setPriceFilter("free")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
+              priceFilter === "free"
+                ? "bg-emerald-500 text-white shadow-md"
+                : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+            }`}
+          >
+            <Sparkles className="h-4 w-4" /> Free Batches
+          </button>
+          <button
+            onClick={() => setPriceFilter("paid")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
+              priceFilter === "paid"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+            }`}
+          >
+            <BookOpen className="h-4 w-4" /> Paid Batches
+          </button>
+        </div>
+
+        {/* Category Filter */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
           {["All", "Central Exams", "State PSC Exams", "Police Exams", "Banking Exams", "Railway Exams", "Defence Exams", "Teaching Exams", "Engineering Govt Exams", "Forest Exams", "Insurance Exams"].map((category) => (
-            <button 
+            <button
               key={category}
               onClick={() => setSelectedCategory(category)}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                selectedCategory === category 
-                  ? "bg-indigo-600 text-white" 
+                selectedCategory === category
+                  ? "bg-indigo-600 text-white"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
