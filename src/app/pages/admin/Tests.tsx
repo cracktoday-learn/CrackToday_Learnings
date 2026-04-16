@@ -154,15 +154,18 @@ export function AdminTests() {
   };
 
   const openEditForm = (batch: Batch) => {
+    console.log("Opening edit form for batch:", batch);
     setEditingBatch(batch);
     setForm({
-      name: batch.name,
+      name: batch.name || "",
       description: batch.description || "",
-      price: batch.price.toString(),
-      total_tests: batch.total_tests.toString(),
-      exam_type: batch.exam_type,
+      price: batch.price?.toString() || "0",
+      total_tests: batch.total_tests?.toString() || "0",
+      exam_type: batch.exam_type || "",
     });
+    setShowTestForm(false); // Close test form if open
     setShowForm(true);
+    console.log("Form should be visible now, showForm:", true);
   };
 
   const handleSave = async () => {
@@ -287,7 +290,7 @@ export function AdminTests() {
         <div className="bg-white rounded-2xl border border-indigo-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-slate-900">{editingBatch ? "Edit Batch" : "New Test Batch"}</h2>
-            <button onClick={() => setShowForm(false)} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
+            <button onClick={() => { setShowForm(false); setEditingBatch(null); setForm(emptyForm); }} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
               <X className="h-5 w-5" />
             </button>
           </div>
