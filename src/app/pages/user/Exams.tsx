@@ -16,7 +16,7 @@ interface Exam {
 }
 
 export function Exams() {
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("State PSC Exams");
   const [priceFilter, setPriceFilter] = useState<"all" | "free" | "paid">("all");
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,7 +155,7 @@ export function Exams() {
 
         {/* Category Filter */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
-          {["All", "Central Exams", "State PSC Exams", "Police Exams", "Banking Exams", "Railway Exams", "Defence Exams", "Teaching Exams", "Engineering Govt Exams", "Forest Exams", "Insurance Exams"].map((category) => (
+          {["State PSC Exams", "Insurance Exams"].map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
