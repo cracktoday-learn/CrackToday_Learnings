@@ -16,7 +16,6 @@ interface Exam {
 }
 
 export function Exams() {
-  const [selectedCategory, setSelectedCategory] = useState("State PSC Exams");
   const [priceFilter, setPriceFilter] = useState<"all" | "free" | "paid">("all");
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,14 +82,13 @@ export function Exams() {
   };
 
   const filteredExams = exams.filter(exam => {
-    const categoryMatch = selectedCategory === "All" || exam.exam_type === selectedCategory;
     const searchMatch = !searchQuery || 
       exam.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exam.exam_type.toLowerCase().includes(searchQuery.toLowerCase());
     const priceMatch = priceFilter === "all" || 
       (priceFilter === "free" && exam.price === 0) || 
       (priceFilter === "paid" && exam.price > 0);
-    return categoryMatch && searchMatch && priceMatch;
+    return searchMatch && priceMatch;
   });
 
   return (
@@ -151,23 +149,6 @@ export function Exams() {
           >
             <BookOpen className="h-4 w-4" /> Paid Batches
           </button>
-        </div>
-
-        {/* Category Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
-          {["State PSC Exams", "Insurance Exams"].map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                selectedCategory === category
-                  ? "bg-indigo-600 text-white"
-                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
