@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Plus, Trash2, Edit, X, Megaphone, Calendar, Eye } from "lucide-react";
+import { Bell, Plus, Trash2, Edit, X, Megaphone, Calendar, Eye, Mail, AlertCircle, CheckCircle } from "lucide-react";
 import { supabase } from "../../../utils/supabase/client";
 import { toast } from "sonner";
 
@@ -12,6 +12,8 @@ interface Notification {
   created_at: string;
   expires_at?: string;
   created_by: string;
+  emails_sent?: number;
+  emails_failed?: number;
 }
 
 interface FormState {
@@ -384,11 +386,23 @@ export function AdminNotifications() {
                     </div>
                     <h3 className="font-semibold text-slate-900 mb-1">{notification.title}</h3>
                     <p className="text-sm text-slate-600 mb-2">{notification.message}</p>
-                    <div className="flex items-center gap-4 text-xs text-slate-400">
-                      <span>Created: {new Date(notification.created_at).toLocaleDateString()}</span>
+                    <div className="flex items-center gap-4 text-xs">
+                      <span className="text-slate-400">Created: {new Date(notification.created_at).toLocaleDateString()}</span>
                       {notification.expires_at && (
-                        <span>Expires: {new Date(notification.expires_at).toLocaleDateString()}</span>
+                        <span className="text-slate-400">Expires: {new Date(notification.expires_at).toLocaleDateString()}</span>
                       )}
+                      {/* Email Status */}
+                      {(notification.emails_sent || notification.emails_failed) ? (
+                        <span className={`flex items-center gap-1 ${notification.emails_failed ? 'text-amber-600' : 'text-emerald-600'}`}>
+                          <Mail className="h-3 w-3" />
+                          {notification.emails_sent || 0} sent
+                          {notification.emails_failed ? `, ${notification.emails_failed} failed` : ''}
+                        </span>
+                      ) : notification.is_active ? (
+                        <span className="flex items-center gap-1 text-slate-400">
+                          <Mail className="h-3 w-3" /> Sending emails...
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
