@@ -130,8 +130,18 @@ export function AdminUsers() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-700">
-                        {user.batches.length > 0 ? `${user.batches.length} ${user.batches.length === 1 ? "batch" : "batches"}` : "-"}
+                      <td className="px-6 py-4">
+                        {user.batches.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {user.batches.map((batchName: string, idx: number) => (
+                              <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                {batchName}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-slate-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-500">
                         {new Date(user.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
