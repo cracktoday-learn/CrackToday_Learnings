@@ -31,31 +31,38 @@ export function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{name?: string; email?: string; password?: string}>({});
+  const [errors, setErrors] = useState<{name?: string; mobile?: string; email?: string; password?: string}>({});
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const validateForm = () => {
-    const newErrors: {name?: string; email?: string; password?: string} = {};
-    
+    const newErrors: {name?: string; mobile?: string; email?: string; password?: string} = {};
+
     if (!name.trim()) {
       newErrors.name = "Full name is required";
     }
-    
+
+    if (!mobile.trim()) {
+      newErrors.mobile = "Mobile number is required";
+    } else if (!/^[0-9]{10}$/.test(mobile)) {
+      newErrors.mobile = "Please enter a valid 10-digit mobile number";
+    }
+
     if (!email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = "Please enter a valid email address";
     }
-    
+
     if (!password) {
       newErrors.password = "Password is required";
     } else if (password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -77,6 +84,7 @@ export function Signup() {
         options: {
           data: {
             full_name: name,
+            mobile: mobile,
           },
         },
       });
@@ -199,7 +207,44 @@ export function Signup() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.35 }}
+          >
+            <Label className="flex items-center gap-1 text-slate-700">
+              Mobile Number <Asterisk className="h-3 w-3 text-red-500" />
+            </Label>
+            <motion.div whileFocus={{ scale: 1.02 }}>
+              <Input
+                type="tel"
+                required
+                maxLength={10}
+                value={mobile}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setMobile(value);
+                  if (errors.mobile) setErrors({...errors, mobile: undefined});
+                }}
+                placeholder="9876543210"
+                className={`mt-1 transition-all duration-200 ${errors.mobile ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+              />
+            </motion.div>
+            <AnimatePresence>
+              {errors.mobile && (
+                <motion.p
+                  className="text-xs text-red-500 mt-1"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  {errors.mobile}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.45 }}
           >
             <Label className="flex items-center gap-1 text-slate-700">
               Email <Asterisk className="h-3 w-3 text-red-500" />
@@ -272,10 +317,10 @@ export function Signup() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <motion.div 
-              whileHover={{ scale: 1.02 }} 
+            <motion.div
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              animate={Object.keys(errors).length > 0 && (errors.name || errors.email || errors.password) ? shakeAnimation : {}}
+              animate={Object.keys(errors).length > 0 && (errors.name || errors.mobile || errors.email || errors.password) ? shakeAnimation : {}}
             >
               <Button 
                 type="submit" 
