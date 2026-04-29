@@ -100,7 +100,6 @@ CREATE POLICY "Users can view questions for accessible tests" ON questions
             JOIN tests t ON p.batch_id = t.batch_id
             WHERE p.user_id = auth.uid()
             AND t.id = questions.test_id
-            AND p.status = 'active'
         )
     );
 
